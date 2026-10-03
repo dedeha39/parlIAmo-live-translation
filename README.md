@@ -1,8 +1,10 @@
 # parlIAmo — live speech translation on one laptop
 
-**Turkish in, Italian out, in the speaker's own voice — with no cloud, no API
-keys and no network at run time.** Microphone to loudspeaker, everything runs
-on one consumer laptop with an 8 GB GPU.
+**Speak one language, the room hears another, in your own voice — with no
+cloud, no API keys and no network at run time.** Seven languages in any
+direction out of the box (Turkish, Italian, English, Spanish, French, German,
+Friulian); the models underneath reach far more. Microphone to
+loudspeaker, everything runs on one consumer laptop with an 8 GB GPU.
 
 Built for a live talk about AI voice cloning and phone scams, given in Turkish
 to an Italian-speaking audience of seniors in Friuli. The system was the talk's
@@ -26,9 +28,10 @@ accessible voice cloning has become.
 
 ## What it does
 
-- **Simultaneous translation**, Turkish → Italian by default. Any pair NLLB-200
-  can tag can be recognised and translated; Italian, Spanish, English, French,
-  German and Turkish can also be *spoken*.
+- **Simultaneous translation between many languages** — see
+  [Languages](#languages). Turkish → Italian is the default because that was
+  the talk; the pair is chosen on the Setup page, and Italian → Turkish works
+  too, for questions from the room.
 - **Speaks in a cloned voice** — three interchangeable voice services, all
   local: OmniVoice (speaks the sentence in the reference voice), Seed-VC
   (zero-shot conversion) and RVC (a voice trained once). Cloning is refused
@@ -42,6 +45,30 @@ accessible voice cloning has become.
   new voice from a consented one, non-verbal tags, 646 languages.
 - **A pre-flight checklist** that says what would go wrong if you started now,
   in plain words.
+
+## Languages
+
+Ready to use, in **any direction — 42 pairs, all of them spoken aloud**:
+
+| Language | Recognised | Translated | Spoken by |
+|---|:-:|:-:|---|
+| Turkish | ✓ | ✓ | Piper (CPU) |
+| Italian | ✓ | ✓ | Kokoro (GPU) |
+| English | ✓ | ✓ | Kokoro |
+| Spanish | ✓ | ✓ | Kokoro |
+| French | ✓ | ✓ | Kokoro |
+| German | ✓ | ✓ | Piper |
+| Friulian | partly — Whisper has no Friulian and hears it as Italian | ✓ | Kokoro's Italian voice — no Friulian voice exists anywhere; disclosed on stage |
+
+Underneath, the reach is far wider: Whisper was trained on **~99 languages**
+(quality varies widely by language — measure before relying on one), NLLB-200
+translates between **~200**, Kokoro also speaks Portuguese, Hindi,
+Japanese and Chinese, and OmniVoice — the cloned-voice service and the
+Studio — speaks **646**. A language without a synthesiser voice still works as
+live subtitles. Adding one is a tag in a table plus a voice:
+[docs/04-adding-a-language.md](docs/04-adding-a-language.md). Calabrese is the
+one asked for that no model translates
+([ADR 0014](docs/adr/0014-spanish-german-turkish-and-calabrese.md)).
 
 ## Measured, not assumed
 
