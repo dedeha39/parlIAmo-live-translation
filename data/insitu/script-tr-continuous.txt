@@ -1,0 +1,48 @@
+# Continuous reading script - Turkish
+#
+# Unlike data/insitu/script-tr.txt, which is read one sentence at a time with a
+# pause between each, this is read STRAIGHT THROUGH as a single take, at
+# presenting pace, with ordinary breath pauses.
+#
+# That difference is the point. Three things can only be measured on continuous
+# speech, and all three were guesses until this existed:
+#
+#   1. vad.min_silence_ms - the largest single term in the end-to-end delay.
+#      Sentence-by-sentence recordings have artificial gaps between them, so
+#      they cannot show whether 500 ms cuts a speaker off mid-clause and 700 ms
+#      does not. Only real breath pauses can.
+#   2. Partial subtitles (ADR 0008) - how often a provisional reading is
+#      revised, and whether the revisions are the harmless kind.
+#   3. A clean voice reference. Recorded on a phone rather than the laptop,
+#      whose driver gates 16-50% of every file to digital silence.
+#
+# The text is deliberately loaded with the things that have broken before:
+#
+#   - "sorum suydu" - the cataphoric construction that made NLLB-600M silently
+#     drop the following sentence (ADR 0007)
+#   - "degil" - negation carried by a suffix at the very end of the clause,
+#     which reverses everything before it
+#   - "600.000" - Turkish groups thousands with a full stop, which once had the
+#     normaliser spelling it "kirk sifir"
+#   - Friulian, ARLeF, Friuli - the proper nouns the hotword list biases toward
+#   - sentences from one word to thirty, so the segmenter meets both extremes
+#
+# HOW TO RECORD
+#   Phone, quiet room, phone about 20-30 cm away, one continuous take.
+#   Read at the pace you will actually present at - do not over-articulate.
+#   If you stumble, keep going; a natural recovery is useful material.
+#   Send the file as it is. Do not trim it.
+
+Merhaba. Bugün sizinle, bir insanın sesinin ne kadar kolay taklit edilebildiğini konuşmak istiyorum.
+
+Bu sunumu hazırlarken kendime sorduğum ilk soru şuydu. Acaba gerçekten bu kadar basit mi?
+
+Cevap, beklediğimden daha rahatsız ediciydi. On beş saniyelik temiz bir kayıt yetiyor. Ne pahalı bir donanım gerekiyor, ne de internet bağlantısı. Şu anda duyduğunuz her şey, şu masanın üstündeki dizüstü bilgisayarın içinde çalışıyor.
+
+Bunu yalnızca bir tehdit olarak anlatmak kolay olurdu. Ama mesele sadece tehdit değil.
+
+Aynı teknoloji, konuşmacı sayısı azalan diller için gerçek bir imkân da sunuyor. Friuli bölgesinde konuşulan Friulian dilini düşünün. Yaklaşık 600.000 kişi konuşuyor. Buna rağmen dijital dünyada neredeyse hiç yer kaplamıyor, ve bu teknik bir sorun değil, nereye emek harcadığımıza dair ortak bir tercih. ARLeF gibi kurumlar bunu değiştirmeye çalışıyor.
+
+Bugün size üç şey göstermek istiyorum. Önce sistemin nasıl çalıştığını. Sonra bir sesin ne kadar hızlı kopyalanabildiğini. En sonunda da, bunu nasıl fark edebileceğinizi.
+
+Başlayalım.

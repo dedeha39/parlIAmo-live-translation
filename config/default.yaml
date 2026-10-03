@@ -1,0 +1,289 @@
+# parlIAmo - default configuration
+#
+# Every value here can be overridden by config/local.yaml (git-ignored) or by
+# CLI flags. Paths are resolved relative to the repository root unless absolute.
+#
+# Target hardware for the reference build:
+#   NVIDIA RTX 4070 Laptop (8188 MiB VRAM) / Intel i9-13900HX / 32 GB RAM / Windows 11
+# See docs/03-hardware-budget.md for the VRAM contract these defaults respect.
+
+project:
+  name: parliamo
+  paths:
+    models: models          # HF_HOME and all weight caches point here
+    runs: runs              # logs, benchmark reports, recordings
+    data: data              # corpora, evaluation sets
+
+# --------------------------------------------------------------------------
+# Audio I/O
+# --------------------------------------------------------------------------
+audio:
+  # Capture is always mono 16 kHz because every ASR backend we support expects
+  # that. Playback runs at the TTS model's native rate.
+  sample_rate: 16000
+  channels: 1
+  block_ms: 32              # capture block size; 32 ms = 512 frames @ 16 kHz
+
+  # null  -> system default device
+  # int   -> device index from `parliamo devices`
+  # string-> case-insensitive substring match on the device name
+  input_device: null
+  output_device: null
+
+  output_sample_rate: 24000 # Kokoro's native output rate (Chatterbox is also 24k)
+  output_gain: 1.0
+
+# --------------------------------------------------------------------------
+# Voice activity detection
+# --------------------------------------------------------------------------
+vad:
+  backend: silero
+  threshold: 0.5
+  min_speech_ms: 250        # ignore blips shorter than this
+  # Silence that closes a segment. The largest single term in the end-to-end
+  # delay, and for a long time the number this project was most afraid to
+  # lower - the assumption being that a shorter wait cuts speakers off
+  # mid-clause.
+  #
+  # Measured on 68 s of continuous reading (the first material that could
+  # answer it; sentence-by-sentence recordings have hand-inserted gaps and
+  # segment identically at every threshold), the assumption was backwards:
+  #
+  #   ms    segments  WER%   CER%   p95 asr  truncated  worst wait
+  #   400      11     11.41  3.61    0.465       0        10.5 s
+  #   500      11     11.41  3.61    0.456       0        10.6 s
+  #   600       8     12.08  3.71    0.500       0        14.1 s
+  #   700       7     12.08  3.90    0.545       1        15.7 s
+  #   900       6     12.08  3.71    0.500       4        15.9 s
+  #
+  # At 700 ms the segmenter was failing to split at natural pauses, running on
+  # until max_segment_ms cut it mid-phrase. 500 is better on every axis: lower
+  # WER, lower CER, faster recognition, no truncation, and five seconds off the
+  # worst case. 400 measures identically - this speaker's pauses are either
+  # under 400 ms or over 500 - so 500 is chosen for the margin.
+  min_silence_ms: 500
+  speech_pad_ms: 120        # padding kept around detected speech
+  max_segment_ms: 15000     # hard cut so one long sentence cannot stall the pipeline
+
+# --------------------------------------------------------------------------
+# Speech recognition
+# --------------------------------------------------------------------------
+asr:
+  backend: faster_whisper   # faster_whisper | qwen3_asr
+  model: large-v3-turbo
+  device: cuda
+  compute_type: int8_float16
+  language: tr              # source language spoken on stage
+  # Beam 5 rather than greedy. Measured on the in-situ set at both quantisations:
+  # int8_float16 14.50 -> 14.00, float16 14.99 -> 13.76. Each gap alone is close
+  # to this sample's noise floor (~0.15 points per reference word), but both
+  # point the same way, and the cost is 21 ms on p95 against a 700 ms commit
+  # wait. Still deterministic - beam search is, temperature fallback is not.
+  beam_size: 5
+  condition_on_previous_text: false   # prevents runaway hallucination loops
+  vad_filter: false         # we run our own VAD upstream
+  temperature: 0.0
+
+  # Vocabulary to bias decoding toward. Measured on 40 in-situ sentences:
+  # -2.21 WER points for large-v3-turbo, +0.98 for large-v3 - it helps the
+  # weaker model and hurts the stronger one, because biasing pulls ordinary
+  # words toward the list. Re-measure whenever the list changes; do not extend
+  # it on the assumption that more context is better. See docs/adr/0002.
+  # The list was rewritten for the talk's own names on 2026-09-26 and
+  # re-measured; the numbers are at the top of the file.
+  hotwords: config/hotwords.tr.txt
+
+# --------------------------------------------------------------------------
+# Machine translation
+# --------------------------------------------------------------------------
+mt:
+  # NLLB via CTranslate2, not an instruction-following LLM. Measured: an LLM
+  # took 2671 ms per sentence against NLLB's 487 ms p95, produced output in the
+  # wrong language on 2 of 6 test sentences, and dropped a negation - which on
+  # stage tells the audience the opposite of what was said. See ADR 0004.
+  backend: ctranslate2_nllb
+  model_path: models/ct2/nllb-200-distilled-600M
+  device: cuda              # cpu frees ~900 MiB for ~100-150 ms more latency
+  compute_type: int8_float16
+  beam_size: 4              # chrF++ 45.38 at beam 4 against 44.46 at beam 1
+  max_decoding_length: 256
+
+  # Translate one sentence at a time instead of a whole recognised segment.
+  # Measured on the presenter's own speech: NLLB-600M rendered
+  #   "Aklimdan gecen ilk soru suydu. Acaba gercekten calisacak mi?"
+  # as "La prima domanda che mi e venuta in mente e stata:" - fluent Italian
+  # with the entire second sentence missing, no error and no flag. Splitting
+  # recovers it and is *faster* (355 ms against 408 ms median), because a batch
+  # of short decodes beats one long autoregressive decode. The splitter knows
+  # about Turkish ordinals ("3. sinif") and abbreviations ("Dr.", "vb.").
+  split_sentences: true
+
+  source_lang: tr
+  targets: [it]             # primary target; add "en" for the bilingual demo
+
+  # NLLB-200 is CC-BY-NC. Fine for a research presentation, a blocker for
+  # anything commercial. See docs/08-model-licences.md.
+
+  # Live, Friulian is a target like any other: the translator above, with
+  # fur_Latn. This block is not read by the live path; it is where a
+  # fine-tuned Friulian model would go, and prepare_friulian_demo.py prints
+  # its source token. No fine-tuning is planned (ADR 0010).
+  friulian:
+    enabled: false          # reserved for a fine-tuned model; none exists
+    backend: ctranslate2_nllb
+    model_path: null
+    device: cpu
+
+    # Direct, not pivoted through Italian. The pivot was assumed from the
+    # start and measured on 2026-09-01: 585 ms against 331 ms, two model
+    # passes against one, and no quality advantage - it introduced a tense
+    # error on one of six sentences by inheriting a drift from the Italian
+    # hop. A pivot cannot recover what the first hop lost. See ADR 0010.
+    src_token: tur_Latn
+    tgt_token: fur_Latn
+
+# --------------------------------------------------------------------------
+# Speech synthesis
+# --------------------------------------------------------------------------
+tts:
+  # Kokoro generates; voice identity is applied afterwards by conversion.
+  # Splitting the two is what took synthesis from 10.5 s to 0.2 s per sentence -
+  # see docs/adr/0006-synthesis-architecture.md. Chatterbox remains available
+  # for the cloning demonstration, where a 10 s wait is part of the point.
+  backend: kokoro
+  device: cuda
+  language: it
+  voice: if_sara            # Kokoro voicepack; identity comes from conversion
+  # The voice per target language. Kokoro has no German or Turkish, so those
+  # are Piper voices (CPU, files under models/piper). The male voices sit near
+  # the presenter's pitch, so the voice service has little to move - measured
+  # median F0: if_sara 223 Hz, em_alex 139, thorsten 125, dfki 105.
+  voices:
+    it: if_sara
+    es: em_alex
+    de: de_DE-thorsten-high
+    tr: tr_TR-dfki-medium
+  speed: 1.0
+
+  # Friulian has no TTS model anywhere. Friulian text is synthesised with the
+  # Italian frontend: plausible prosody, Italian phonetics. A documented
+  # limitation, disclosed on stage - not a bug.
+  friulian_speaks_as: it
+
+  # Voice conversion runs in the seedvc environment behind a local socket,
+  # because Seed-VC needs an older huggingface_hub than datasets and
+  # transformers do. Start it with:
+  #   <seedvc-env>/python.exe scripts/voice_conversion_server.py
+  conversion:
+    enabled: false          # flipped on once a consented reference voice exists
+    host: 127.0.0.1
+    # Two services speak this port's protocol. 8765 is Seed-VC: zero-shot,
+    # any consented reference, ~0.93 s per sentence - the volunteer demo.
+    # 8766 is RVC via scripts/rvc_server.py: one voice trained once, ~0.43 s
+    # per sentence - the presenter's own. Measured end to end on the same
+    # recording: 2.29 s mean against 1.58. See ADR 0012.
+    port: 8765
+    # Quality/speed dial, and it has been round the houses.
+    #
+    # 4 -> 15 on 2026-09-01, after a listening check on a properly built
+    # reference rejected 4 for residual noise heard as digital breaking. Then
+    # back to 4 the same day, once the reference was rebuilt from a phone
+    # recording with **no driver gating at all** rather than from the laptop
+    # microphone, which removes 16-50% of everything it records.
+    #
+    # So the step count was never really the problem: it was compensating for
+    # a damaged reference. Measured on a 4.42 s sentence with the clean 12 s
+    # reference:
+    #
+    #    4 steps   0.67 s   total 2.06 s   <- this
+    #    8 steps   0.78 s   total 2.17 s
+    #   15 steps   1.10 s   total 2.49 s
+    #   (laptop reference, 15 steps: 1.37 s, total 2.76 s)
+    #
+    # Chosen for latency, on the presenter's instruction, from options all
+    # judged acceptable. If the artefact is audible in a larger room, the
+    # ladder back up is 4 -> 8 -> 15 and costs 0.11 s a rung.
+    diffusion_steps: 4
+    # How long one conversion may take before the sentence goes out in the
+    # generic voice and conversion pauses for 30 s. The slowest ever measured
+    # was 4.7 s - Seed-VC's very first call after loading; in a talk, 0.3-1.5 s.
+    # It was 60, which a service that hung would have charged on every
+    # sentence: a minute of silence each.
+    timeout_s: 10
+    # The presenter's median pitch, set in local.yaml. When present, each
+    # sentence carries its own RVC pitch shift from whichever synthesiser voice
+    # spoke it; absent, the server's --pitch applies to every language.
+    presenter_f0_hz: null
+    # OmniVoice only: speaking rate, below 1 slower. null copies the reference's
+    # pace, which measured 6.2-6.4 syllables/s - faster than Kokoro's 5.3.
+    # Changeable from the Setup tab while running.
+    speed: null
+    # 12-15 s of the target speaker. Build it with
+    #   scripts/build_voice_reference.py --from <dir> --seconds 12
+    # rather than pointing at a raw recording: on the reference laptop the
+    # microphone's noise suppression gates 16-50% of every file to digital
+    # silence, and the first reference chosen by hand was 49.5% holes.
+    reference_voice: null
+    # Cloning a voice without documented permission is the thing this project
+    # exists to warn people about. VoiceProfile refuses to register a voice
+    # with an empty consent record, so this is not decoration.
+    consent: ""
+
+# --------------------------------------------------------------------------
+# Pipeline behaviour
+# --------------------------------------------------------------------------
+pipeline:
+  # Mute the microphone while synthesised audio is playing. Without this the
+  # speakers feed back into the mic and the system translates its own output.
+  # This is the single most important stage-safety flag in the project.
+  half_duplex: true
+  half_duplex_tail_ms: 250  # reverberation margin after the speakers go silent
+
+  # Measured acoustic round-trip of the OUTPUT path, from
+  # scripts/measure_audio_device.py. PortAudio reports only its own buffers
+  # (~3 ms on the reference laptop); it cannot see the vendor DSP chain. That
+  # same laptop measured ~430 ms round-trip through the Realtek speakers versus
+  # ~258 ms through HDMI - a 170 ms difference caused purely by the output
+  # device. The gate stays closed for (this value + half_duplex_tail_ms), so
+  # leaving it at 0 lets the microphone reopen while the last sentence is still
+  # coming out of the speakers. Measure it per venue; do not guess.
+  output_latency_ms: 0
+
+  subtitles: true
+
+  # Show a provisional subtitle while the speaker is still talking, replaced
+  # when the sentence is committed. Nearly free: the recogniser thread is idle
+  # for the whole time someone is speaking - it is waiting for silence - so a
+  # partial runs in time the committed sentence was not going to use. It is
+  # dropped whenever the recogniser is actually busy, because a preview that
+  # delays the thing it previews is worse than no preview.
+  #
+  # Partials are never spoken. Turkish puts the verb, and the negation suffix,
+  # at the end: "bu teknik bir mesele degil" reverses everything before it. A
+  # subtitle can be corrected on screen a second later; audio cannot be
+  # un-said.
+  emit_partial_transcripts: true
+  partial_interval_ms: 800
+
+  # Speak each sentence the moment the recogniser sees it end - a full stop in
+  # the provisional text - instead of waiting for the speaker to pause. With a
+  # ten-second run of speech this delivers the first sentence three seconds in
+  # rather than everything at the end.
+  #
+  # Off by default, and the reason is the one above: a sentence is only
+  # spoken once its final punctuation has been recognised, which is later than
+  # a partial but earlier than the commit wait, and a mis-placed full stop from
+  # the recogniser will speak a fragment. The presenter asked for the option
+  # and takes that trade knowingly; it can be switched on and off from the
+  # Live tab while running.
+  stream_sentences: false
+  max_queue_depth: 4        # drop oldest segment if we fall this far behind
+
+# --------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------
+logging:
+  level: INFO
+  console: true
+  jsonl: true               # structured per-event log for later analysis
+  latency_trace: true       # record per-stage timings for every segment

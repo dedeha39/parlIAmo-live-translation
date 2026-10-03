@@ -1,0 +1,20 @@
+# Stage 0 - always needed. Install first; everything else builds on this.
+#
+# Dependencies are split per stage so that a failure in one (CUDA wheels are the
+# usual suspect) does not leave the whole environment half-installed.
+#
+#   pip install -r requirements/core.txt
+
+pyyaml==6.0.3
+numpy==2.5.2
+rich==15.0.0
+
+# Audio I/O. soxr does the sample-rate conversion between whatever the sound
+# card runs at and the 16 kHz the ASR models expect.
+sounddevice==0.5.6
+soundfile==0.14.0
+soxr==1.1.0
+
+# Dev
+pytest==9.1.1
+ruff==0.16.5

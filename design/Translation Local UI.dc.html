@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#eae7e0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}a{color:#17150f}a:hover{color:#5b7fd4}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(23,21,15,.1);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#17150f;color:#faf8f3;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(23,21,15,.09);color:#17150f;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.82)}.dv-card{max-width:100%;background:#faf8f3;border:1px solid rgba(23,21,15,.12);border-radius:10px;box-shadow:0 2px 10px rgba(23,21,15,.07);overflow:hidden}.dv-opt:target .dv-oid{background:#5b7fd4;color:#fff}.dv-next{margin:26px 0 0;font:12px/1.6 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.74)}.dv-note{margin:0 0 24px;max-width:760px;font:13px/1.65 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.76)}</style></helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">parlIAmo — operator interface, full function coverage</span></div>
+<p class="dv-note">I have now read the codebase. It is <strong>parlIAmo</strong>: real-time Turkish→Italian speech translation, fully local, in the speaker's cloned voice — microphone → VAD → faster-whisper → NLLB-600M → Kokoro → Seed-VC → speakers, with a Friulian text branch. Turn <a class="dv-oid" href="#t1">1</a> below was built before I could read it and describes the wrong product; it is left in place only as history. <a class="dv-oid" href="#2a">2a</a> is a live redesign of <span style="font-family:ui-monospace,Consolas,monospace">ui/app.html</span> — the tabs, Start/Stop, Mute, voice and Turkish toggles all work. <a class="dv-oid" href="#2c">2c</a> maps every route and public function to where it lives.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Operator window — <span style="font-family:ui-monospace,Consolas,monospace">GET /</span>. Laptop distance, one person who is also talking. Click the tabs.</div>
+<div class="dv-card" style="width:1400px;background:#faf9f7;font-family:'Segoe UI',system-ui,Arial,sans-serif">
+
+<div style="display:flex;align-items:center;gap:12px;padding:11px 18px;background:#fff;border-bottom:1px solid #e0ddd6">
+<span style="{{ pulseStyle }}"></span>
+<span style="font:600 15px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;letter-spacing:-.01em">parlIAmo</span>
+<span style="padding:3px 9px;border-radius:5px;background:#f3f1ed;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">tr → it</span>
+<span style="flex:1"></span>
+<span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">last lag <span style="color:#1c1b19;font-weight:600">3.66 s</span></span>
+<span style="{{ voiceHdrStyle }}">voice: {{ voice }}</span>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:8px 16px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer" onClick="{{ toggleRun }}">{{ runLabel }}</button>
+<button style="{{ muteStyle }}" onClick="{{ toggleMute }}">{{ muteLabel }}</button>
+</div>
+
+<div style="display:grid;grid-template-columns:184px 1fr;min-height:880px">
+<div style="background:#f3f1ed;border-right:1px solid #e0ddd6;padding:10px;display:flex;flex-direction:column;gap:2px">
+<button style="{{ tabLive }}" onClick="{{ goLive }}">Live</button>
+<button style="{{ tabVoices }}" onClick="{{ goVoices }}">Voices</button>
+<button style="{{ tabFriulian }}" onClick="{{ goFriulian }}">Friulian</button>
+<button style="{{ tabEthics }}" onClick="{{ goEthics }}">Ethics</button>
+<button style="{{ tabSetup }}" onClick="{{ goSetup }}">Setup<span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#854f0b"></span></button>
+<div style="margin-top:auto;padding:12px 12px 6px;border-top:1px solid #e0ddd6">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:9px">KEYS</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font:600 12px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19;background:#fff;border:1px solid #e0ddd6;border-radius:4px;padding:2px 6px">M</span><span style="font:400 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">mute audio</span></div>
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font:600 12px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19;background:#fff;border:1px solid #e0ddd6;border-radius:4px;padding:2px 6px">G</span><span style="font:400 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">generic voice</span></div>
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font:600 12px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19;background:#fff;border:1px solid #e0ddd6;border-radius:4px;padding:2px 6px">S</span><span style="font:400 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Turkish source</span></div>
+</div>
+</div>
+</div>
+
+<div style="padding:20px 24px;min-width:0">
+
+<sc-if value="{{ isLive }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ muted }}">
+<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:8px;background:#e24b4a;color:#fff;margin-bottom:14px">
+<span style="font:600 14px/1 'Segoe UI',system-ui,Arial,sans-serif;letter-spacing:.09em">AUDIO MUTED</span>
+<span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif">Playback is flushed and the half-duplex gate is released. Subtitles continue.</span>
+</div>
+</sc-if>
+<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:8px;background:#faeeda;border:1px solid #efc07a;color:#854f0b;margin-bottom:14px">
+<span style="font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif"><strong>Output latency not measured.</strong> The gate is sized from PortAudio's 3 ms rather than the ~430 ms real path through the vendor DSP. With speakers live the microphone will hear them and the system starts translating its own output.</span>
+</div>
+
+<sc-if value="{{ stopped }}">
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:40px 20px;text-align:center;margin-bottom:12px">
+<div style="font:600 18px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:6px">Not running</div>
+<div style="font:400 14px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:20px">The microphone is closed. Nothing is being recognised.</div>
+<button style="font:500 16px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:13px 30px;border:1px solid #185fa5;border-radius:8px;background:#185fa5;color:#fff;cursor:pointer" onClick="{{ toggleRun }}">Start listening</button>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:10px">STATUS: STARTING</div>
+<div style="font:600 16px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:5px">Starting</div>
+<div style="font:400 14px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">loading ASR large-v3-turbo · 1213 MiB</div>
+<div style="margin-top:12px;height:4px;border-radius:2px;background:#f3f1ed;overflow:hidden"><div style="width:46%;height:100%;background:#185fa5"></div></div>
+<div style="margin-top:9px;font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Every stage publishes. Forty silent seconds and a crash look identical.</div>
+</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#a32d2d;margin-bottom:10px">STATUS: FAILED</div>
+<div style="font:600 16px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#a32d2d;margin-bottom:5px">Could not start</div>
+<div style="font:400 14px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Unanticipated host error -9999 opening WASAPI input. The apartment is missing on this thread — <span style="font-family:ui-monospace,Consolas,monospace">ensure_com()</span>.</div>
+<div style="margin-top:12px;font:400 13px/1.4 ui-monospace,Consolas,monospace;background:#f3f1ed;border-radius:5px;padding:7px 9px;color:#1c1b19">python scripts/check_env.py</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ running }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:1fr 400px;gap:14px;margin-bottom:14px;align-items:start">
+
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:18px 20px;min-height:280px;display:flex;flex-direction:column;justify-content:flex-end;gap:12px">
+<div>
+<div style="font:400 15px/1.35 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Ma la domanda vera è un'altra.</div>
+<sc-if value="{{ srcOn }}" hint-placeholder-val="{{ true }}"><div style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">Ama gerçek soru başka.</div></sc-if>
+</div>
+<div>
+<div style="font:400 17px/1.35 'Segoe UI',system-ui,Arial,sans-serif;color:#3f3e3a">Nessuno ha insegnato a questo modello il friulano.</div>
+<sc-if value="{{ srcOn }}" hint-placeholder-val="{{ true }}"><div style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">Bu modele kimse Friulice öğretmedi.</div></sc-if>
+</div>
+<div>
+<div style="font:600 22px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;letter-spacing:-.01em">Un modello generale di traduzione l'ha semplicemente già vista.</div>
+<sc-if value="{{ srcOn }}" hint-placeholder-val="{{ true }}"><div style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:4px">Genel bir çeviri modeli onu daha önce görmüş, hepsi bu.</div></sc-if>
+</div>
+<div>
+<div style="font:italic 400 22px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">E questo non è un difetto<span style="display:inline-block;width:.5em;height:.11em;margin-left:.25em;background:#5f5e5a;vertical-align:middle"></span></div>
+<sc-if value="{{ srcOn }}" hint-placeholder-val="{{ true }}"><div style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:4px">Ve bu bir kusur</div></sc-if>
+<div style="margin-top:7px;font:400 12px/1 ui-monospace,Consolas,monospace;color:#854f0b">provisional · revised in place · never spoken</div>
+</div>
+</div>
+
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:18px 20px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:14px">LAST SENTENCE · 3.66 s</div>
+<div style="display:flex;height:12px;border-radius:3px;overflow:hidden;margin-bottom:14px">
+<div style="width:13.7%;background:#c9c5bb"></div>
+<div style="width:19.1%;background:#123f6e"></div>
+<div style="width:14.2%;background:#185fa5"></div>
+<div style="width:9.6%;background:#4a86c4"></div>
+<div style="width:43.4%;background:#89b3d9"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:9px"><span style="width:9px;height:9px;border-radius:2px;background:#c9c5bb;flex:none"></span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">commit wait</span><span style="margin-left:auto;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">0.50 s</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:9px;height:9px;border-radius:2px;background:#123f6e;flex:none"></span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">recognition</span><span style="margin-left:auto;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">0.70 s</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:9px;height:9px;border-radius:2px;background:#185fa5;flex:none"></span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">translation</span><span style="margin-left:auto;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">0.52 s</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:9px;height:9px;border-radius:2px;background:#4a86c4;flex:none"></span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">synthesis</span><span style="margin-left:auto;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">0.35 s</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:9px;height:9px;border-radius:2px;background:#89b3d9;flex:none"></span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">voice conversion</span><span style="margin-left:auto;font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">1.59 s</span></div>
+</div>
+<div style="margin:14px 0;height:1px;background:#e0ddd6"></div>
+<div style="font:400 13px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Only the commit wait is a choice. The tail is driven by sentence length, not by the pipeline.</div>
+<div style="display:flex;gap:16px;margin-top:12px">
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">mean</div><div style="font:600 17px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:3px">2.78</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">p50</div><div style="font:600 17px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:3px">2.56</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">p95</div><div style="font:600 17px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:3px">3.66</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">subtitle</div><div style="font:600 17px/1.2 ui-monospace,Consolas,monospace;color:#185fa5;margin-top:3px">1.68</div></div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:13px 15px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">sentences</div><div style="font:600 26px/1.1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-top:4px">11</div></div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:13px 15px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">provisional</div><div style="font:600 26px/1.1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-top:4px">38</div></div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:13px 15px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">last lag</div><div style="font:600 26px/1.1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-top:4px">3.66 s</div></div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:13px 15px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">voice</div><div style="{{ voiceStatStyle }}">{{ voice }}</div></div>
+</div>
+
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px;margin-bottom:14px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+<span style="font:600 15px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Half-duplex gate</span>
+<span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">closed while the speakers are live, so the system cannot translate itself</span>
+<span style="margin-left:auto;padding:3px 9px;border-radius:20px;background:#eaf3e2;font:600 12px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#3b6d11">open</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">closes</div><div style="font:600 19px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:4px">11</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">muted</div><div style="font:600 19px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:4px">21.4 s</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">speech lost to the gate</div><div style="font:600 19px/1.2 ui-monospace,Consolas,monospace;color:#854f0b;margin-top:4px">3 blocks</div></div>
+<div><div style="font:400 12px/1 ui-monospace,Consolas,monospace;color:#5f5e5a">tail</div><div style="font:600 19px/1.2 ui-monospace,Consolas,monospace;color:#1c1b19;margin-top:4px">250 ms</div></div>
+</div>
+</div>
+
+<div style="display:flex;gap:9px;flex-wrap:wrap">
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer">Audience screen ↗</button>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer" onClick="{{ dropVoice }}">Generic voice</button>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer" onClick="{{ toggleSrc }}">{{ srcLabel }}</button>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer">Flush playback</button>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isVoices }}">
+<div style="font:600 19px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Voices</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:16px;max-width:74ch">Whose voice the system speaks in. <span style="font-family:ui-monospace,Consolas,monospace">VoiceProfile.validate()</span> refuses a profile with an empty consent record, at startup and again on a mid-talk swap. A volunteer's recording is deleted when the session ends — the consent form says so.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;overflow:hidden;margin-bottom:12px">
+<div style="display:grid;grid-template-columns:1fr 240px 180px 96px;padding:9px 16px;background:#f3f1ed;border-bottom:1px solid #e0ddd6">
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">voice</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">consent</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">gated by the driver</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;text-align:right"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 240px 180px 96px;padding:12px 16px;border-bottom:1px solid #e0ddd6;align-items:center">
+<span style="display:flex;align-items:center;gap:8px"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">phone-25s</span><span style="padding:2px 8px;border-radius:20px;background:#eaf3e2;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#3b6d11">recommended</span></span>
+<span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">speaker, own voice</span>
+<span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#3b6d11">0%</span>
+<span style="text-align:right"><button style="font:400 13px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:6px 13px;border:1px solid #c9c5bb;border-radius:7px;background:#fff;color:#1c1b19;cursor:pointer">use</button></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 240px 180px 96px;padding:12px 16px;border-bottom:1px solid #e0ddd6;align-items:center">
+<span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">ref-18s</span>
+<span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">speaker, own voice</span>
+<span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#854f0b">49.5% — holes</span>
+<span style="text-align:right"><button style="font:400 13px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:6px 13px;border:1px solid #c9c5bb;border-radius:7px;background:#fff;color:#1c1b19;cursor:pointer">use</button></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 240px 180px 96px;padding:12px 16px;align-items:center;background:#faeeda">
+<span style="display:flex;align-items:center;gap:8px"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">elena-m</span><span style="padding:2px 8px;border-radius:20px;background:#f6dcb4;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">volunteer</span></span>
+<span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">signed form ref 007</span>
+<span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#3b6d11">11%</span>
+<span style="text-align:right"><button style="font:400 13px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:6px 13px;border:1px solid #854f0b;border-radius:7px;background:#fff;color:#854f0b;cursor:pointer" onClick="{{ useVolunteer }}">use</button></span>
+</div>
+</div>
+<div style="display:flex;gap:9px;margin-bottom:24px">
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;color:#1c1b19;cursor:pointer" onClick="{{ dropVoice }}">Back to generic voice</button>
+<button style="font:500 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 15px;border:1px solid #e24b4a;border-radius:8px;background:#e24b4a;color:#fff;cursor:pointer">Delete all volunteer recordings</button>
+<span style="align-self:center;font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">unloads the voice too — a voice whose recording is gone must not stay loaded</span>
+</div>
+
+<div style="font:600 19px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Clone a volunteer</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:16px;max-width:74ch">Fifteen seconds, which is the point of the segment. Ask before it rather than during it, and make refusing easy. Consent is checked before the microphone opens — a recording made and then refused is a recording that existed.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px">
+<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:180px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:6px">Their name</div><div style="height:38px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 11px;font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Elena M.</div></div>
+<div style="flex:2;min-width:240px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:6px">Signed form reference — required</div><div style="height:38px;border:1px solid #185fa5;border-radius:8px;background:#fff;display:flex;align-items:center;padding:0 11px;font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">ref 007</div></div>
+<div style="width:110px"><div style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:6px">Length</div><div style="height:38px;border:1px solid #c9c5bb;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">15 s <span style="font-size:9px;color:#5f5e5a">▾</span></div></div>
+</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<button style="font:500 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:10px 17px;border:1px solid #185fa5;border-radius:8px;background:#185fa5;color:#fff;cursor:pointer">Record and use</button>
+<span style="font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#3b6d11">15.0 s captured, peak 0.412, 11% removed by the driver. Now speaking as elena-m.</span>
+</div>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e0ddd6;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">Above 40% gated the tool says so plainly: the microphone removed most of that recording, so the clone will sound poor.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFriulian }}">
+<div style="font:600 19px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Friulian</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:14px;max-width:78ch">Prepared sentences, translated straight from Turkish by NLLB-200 with no fine-tuning and no Friulian training data. What is missing is a native speaker's judgement — <span style="font-family:ui-monospace,Consolas,monospace">data/friulian/review-sheet.md</span> holds the blanks, awaiting ARLeF.</div>
+<div style="padding:13px 16px;border-radius:8px;background:#e6f1fb;border:1px solid #185fa5;color:#134b83;font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;margin-bottom:16px">No text-to-speech model for Friulian exists anywhere — checked against MMS-TTS (1100+ languages), eSpeak NG (222 voices) and ElevenLabs (32). These are read with <strong>Italian</strong> phonetics, and that is disclosed on stage rather than hidden.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;overflow:hidden">
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 200px;padding:9px 16px;background:#f3f1ed;border-bottom:1px solid #e0ddd6">
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">#</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Friulian — to check</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Italian, meaning only</span>
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Correction</span>
+</div>
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 200px;padding:13px 16px;border-bottom:1px solid #e0ddd6;align-items:start;gap:12px">
+<span style="font:400 13px/1.6 ui-monospace,Consolas,monospace;color:#5f5e5a">1</span>
+<span style="font:600 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Il furlan al è une lenghe che e je parade tal Friul Venezia Giulia.</span>
+<span style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Il friulano è una lingua parlata nella regione Friuli Venezia Giulia.</span>
+<span style="min-height:34px;border-bottom:1px dashed #c9c5bb"></span>
+</div>
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 200px;padding:13px 16px;border-bottom:1px solid #e0ddd6;align-items:start;gap:12px">
+<span style="font:400 13px/1.6 ui-monospace,Consolas,monospace;color:#5f5e5a">3</span>
+<span style="font:600 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Cheste frase no je stade insegnade a nissun par furlan.</span>
+<span style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Nessuno ha insegnato questa frase per il Friuliano.</span>
+<span style="min-height:34px;border-bottom:1px dashed #c9c5bb"></span>
+</div>
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 200px;padding:13px 16px;border-bottom:1px solid #e0ddd6;align-items:start;gap:12px">
+<span style="font:400 13px/1.6 ui-monospace,Consolas,monospace;color:#5f5e5a">5</span>
+<span style="font:600 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Nol è nissun model di sintesi linguistiche par cheste lenghe.</span>
+<span style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Non c'è alcun modello di sintesi del linguaggio.</span>
+<span style="min-height:34px;border-bottom:1px dashed #c9c5bb"></span>
+</div>
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 200px;padding:13px 16px;align-items:start;gap:12px">
+<span style="font:400 13px/1.6 ui-monospace,Consolas,monospace;color:#5f5e5a">8</span>
+<span style="font:600 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Cheste no je une difese, e je chê che o vuei mostrâ.</span>
+<span style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Non è un difetto, è proprio quello che voglio dimostrare.</span>
+<span style="min-height:34px;border-bottom:1px dashed #c9c5bb"></span>
+</div>
+</div>
+<div style="margin-top:12px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">Known gap: clip playback for these lines is noted and not built. The reference doc lists it as a gap, not a roadmap item.</div>
+</sc-if>
+
+<sc-if value="{{ isEthics }}">
+<div style="font:600 19px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Ethics</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:16px;max-width:78ch">This project clones voices, and that capability is the subject of the presentation rather than a side effect of it. These are the parts the audience can act on.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:4px 18px;margin-bottom:14px">
+<div style="display:flex;gap:12px;padding:15px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#639922;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Consent is enforced in code</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">A voice without a consent record is refused before anything loads — at startup, and again on a mid-talk swap. It has refused since the first week.</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:15px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#639922;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Every demo clip announces itself</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">"Questa voce è sintetica" at the start, the end, and unpredictable interior points chosen with <span style="font-family:ui-monospace,Consolas,monospace">secrets.SystemRandom</span> and moved to the quietest nearby sample. A fixed pattern can be trimmed out; this cannot.</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:15px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#854f0b;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">This pipeline does not watermark</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">Perth recovers Chatterbox's mark perfectly and finds nothing in Kokoro + Seed-VC. No watermark means only that whatever made this did not mark it — not that the audio is real. Detection threshold 0.75.</div><div style="display:inline-block;margin-top:7px;font:400 13px/1.4 ui-monospace,Consolas,monospace;background:#f3f1ed;border-radius:5px;padding:4px 8px;color:#1c1b19">scripts\ethics_demo.py --with-chatterbox</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:15px 0">
+<span style="width:18px;height:18px;border-radius:50%;background:#639922;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Public figures are out of scope</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">Regardless of technical feasibility. Reference recordings never leave the machine and are deleted after the event.</div></div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:12px">EU AI ACT ARTICLE 50</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">In force</span><span style="font:600 14px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">2 Aug 2026</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Watermarking grace ends</span><span style="font:600 14px/1.4 ui-monospace,Consolas,monospace;color:#854f0b">2 Dec 2026</span></div>
+</div>
+<div style="margin-top:12px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Full reasoning and the consent form: <span style="font-family:ui-monospace,Consolas,monospace">docs/07-ethics-and-consent.md</span></div>
+</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:12px">MODEL LICENCES</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">This code</span><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">Apache-2.0</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">NLLB-200</span><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#854f0b">CC-BY-NC</span></div>
+</div>
+<div style="margin-top:12px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Non-commercial. Read <span style="font-family:ui-monospace,Consolas,monospace">docs/08-model-licences.md</span> before building anything commercial on top.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSetup }}">
+<div style="font:600 19px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Setup</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:16px;max-width:78ch">What would go wrong if you started right now. Nothing here blocks starting — whether a warning is acceptable is a judgement for the person on stage.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:4px 18px;margin-bottom:20px">
+<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#e24b4a;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Output latency not measured</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">The gate is sized from PortAudio's reported latency, which excludes the vendor DSP — 3 ms reported against ~430 ms real on this laptop. With speakers live the microphone hears them and the system starts translating its own output.</div><div style="display:inline-block;margin-top:7px;font:400 13px/1.4 ui-monospace,Consolas,monospace;background:#f3f1ed;border-radius:5px;padding:4px 8px;color:#1c1b19">scripts/measure_audio_device.py --label venue</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#639922;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Microphone: Lavalier (WASAPI)</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">Windows WASAPI, 2 ms. Not a loopback input, so the system will not transcribe its own Italian.</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #e0ddd6">
+<span style="width:18px;height:18px;border-radius:50%;background:#639922;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Audio output on</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">The room will hear the translation. Output is hard-limited rather than allowed to wrap.</div></div>
+</div>
+<div style="display:flex;gap:12px;padding:14px 0">
+<span style="width:18px;height:18px;border-radius:50%;background:#854f0b;flex:none;margin-top:3px"></span>
+<div><div style="font:600 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">1 volunteer recording on disk</div><div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-top:3px">elena-m. Delete it when the session ends — the consent form promises it.</div><div style="display:inline-block;margin-top:7px;font:400 13px/1.4 ui-monospace,Consolas,monospace;background:#f3f1ed;border-radius:5px;padding:4px 8px;color:#1c1b19">clone_volunteer.py --forget-all</div></div>
+</div>
+</div>
+
+<div style="font:600 17px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Devices</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:12px;max-width:78ch">Pick them here so a wrong microphone is a choice rather than a surprise. A change applies at the next start — swapping a device under a running stream gives you a dead microphone with no error.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px;margin-bottom:12px">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><span style="width:86px;font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Microphone</span><div style="flex:1;height:38px;border:1px solid #c9c5bb;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Lavalier — Windows WASAPI — 2 ms <span style="font-size:9px;color:#5f5e5a">▾</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="width:86px;font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Speakers</span><div style="flex:1;height:38px;border:1px solid #c9c5bb;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Realtek — Windows WASAPI — 3 ms <span style="font-size:9px;color:#5f5e5a">▾</span></div></div>
+<div style="padding:10px 12px;border-radius:8px;background:#faeeda;border:1px solid #efc07a;font:400 13px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">input: Lavalier · output: Speakers (Realtek) <strong>⚠ not the one you picked — it would not open</strong> · changes apply at next start</div>
+<div style="margin-top:9px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Selected and live are shown separately. Between choosing a device and pressing start they differ, and a substitution made quietly is right thirty seconds before a talk and wrong to hide.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:13px">VRAM, MEASURED CO-RESIDENT</div>
+<div style="height:22px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:12px">
+<div style="width:14.7%;background:#c9c5bb"></div>
+<div style="width:35.4%;background:#123f6e"></div>
+<div style="width:14.8%;background:#185fa5"></div>
+<div style="width:10.3%;background:#4a86c4"></div>
+<div style="width:9.1%;background:#89b3d9"></div>
+<div style="width:4.4%;background:#b9d3e9"></div>
+<div style="flex:1;background:#eaf3e2"></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Peak</span><span style="font:600 15px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">7292 / 8188 MiB</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Headroom</span><span style="font:600 15px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">896 MiB</span></div>
+<div style="margin-top:11px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Desktop · Seed-VC service · ASR · MT · Kokoro · activations · one conversion. Measured co-resident, never summed.</div>
+</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 18px">
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:13px">OUTPUT LATENCY, THREE MEASUREMENTS</div>
+<div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:6px 10px;font:400 13px/1.6 ui-monospace,Consolas,monospace">
+<span style="color:#5f5e5a">run</span><span style="color:#5f5e5a">median</span><span style="color:#5f5e5a">range</span><span style="color:#5f5e5a">spare</span>
+<span style="color:#1c1b19">1</span><span style="color:#1c1b19">432 ms</span><span style="color:#1c1b19">229–552</span><span style="color:#1c1b19">130 ms</span>
+<span style="color:#1c1b19">2</span><span style="color:#1c1b19">366 ms</span><span style="color:#1c1b19">266–548</span><span style="color:#854f0b">68 ms</span>
+<span style="color:#1c1b19">3</span><span style="color:#1c1b19">432 ms</span><span style="color:#1c1b19">229–597</span><span style="color:#854f0b">85 ms</span>
+</div>
+<div style="margin-top:12px;font:400 13px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">This output path is jittery — up to 581 ms of spread within one run. The margin holds, but not by much, and it is a property of the room rather than the software. Re-measure in the venue.</div>
+</div>
+</div>
+
+<div style="font:600 17px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19;margin-bottom:4px">Everything the card reports</div>
+<div style="font:400 14px/1.55 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a;margin-bottom:12px;max-width:78ch">Windows exposes the same hardware once per host API. The system default here was an MME clone at 90 ms against 2 ms on WASAPI. WDM-KS is ranked last despite the best latency on paper — on this machine all 12 WDM-KS outputs fail.</div>
+<div style="background:#fff;border:1px solid #e0ddd6;border-radius:12px;overflow:hidden">
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:9px 16px;background:#f3f1ed;border-bottom:1px solid #e0ddd6">
+<span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">device</span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">host API</span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">dir</span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">latency</span><span style="font:400 13px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:11px 16px;border-bottom:1px solid #e0ddd6;align-items:center"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Lavalier</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">WASAPI</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">input</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">2 ms</span><span><span style="padding:2px 8px;border-radius:20px;background:#e6f1fb;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#134b83">selected</span></span></div>
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:11px 16px;border-bottom:1px solid #e0ddd6;align-items:center"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Microphone Array</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">WASAPI</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">input</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">2 ms</span><span><span style="padding:2px 8px;border-radius:20px;background:#f3f1ed;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">default</span></span></div>
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:11px 16px;border-bottom:1px solid #e0ddd6;align-items:center"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">WH-1000XM4 (Hands-Free)</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">WASAPI</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">input</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">21 ms</span><span><span style="padding:2px 8px;border-radius:20px;background:#faeeda;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">bluetooth — 16 kHz mono over HFP</span></span></div>
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:11px 16px;border-bottom:1px solid #e0ddd6;align-items:center"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Speakers (Realtek)</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">WASAPI</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">output</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#1c1b19">3 ms</span><span><span style="padding:2px 8px;border-radius:20px;background:#faeeda;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#854f0b">substituted — live now</span></span></div>
+<div style="display:grid;grid-template-columns:1fr 150px 90px 90px 200px;padding:11px 16px;align-items:center"><span style="font:400 14px/1.3 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Stereo Mix</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">WASAPI</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">input</span><span style="font:400 13px/1.3 ui-monospace,Consolas,monospace;color:#5f5e5a">8 ms</span><span><span style="padding:2px 8px;border-radius:20px;background:#f9e3e3;font:600 12px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#a32d2d">loopback — never auto-selected</span></span></div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Audience screen — <span style="font-family:ui-monospace,Consolas,monospace">GET /screen</span>. Projected, read across a room, second display.</div>
+<div class="dv-card" style="width:1400px;background:#0b0d10;border-color:#232a32">
+<div style="height:44px;display:flex;align-items:center;justify-content:center;background:#e24b4a"><span style="font:700 15px/1 'Segoe UI',system-ui,Arial,sans-serif;letter-spacing:.1em;color:#fff">AUDIO MUTED</span></div>
+<div style="min-height:600px;display:flex;flex-direction:column;justify-content:flex-end;gap:26px;padding:56px 70px 30px">
+<div>
+<div style="font:400 34px/1.25 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">Ma la domanda vera è un'altra.</div>
+</div>
+<div>
+<div style="font:400 42px/1.25 'Segoe UI',system-ui,Arial,sans-serif;color:#b9c1cb">Nessuno ha insegnato a questo modello il friulano.</div>
+</div>
+<div>
+<div style="font:600 62px/1.22 'Segoe UI',system-ui,Arial,sans-serif;color:#f4f6f8;letter-spacing:-.015em;text-wrap:pretty">Un modello generale di traduzione l'ha semplicemente già vista.</div>
+</div>
+<div>
+<div style="font:italic 400 62px/1.22 'Segoe UI',system-ui,Arial,sans-serif;color:#9aa4b0;letter-spacing:-.015em">E questo non è un difetto<span style="display:inline-block;width:.5em;height:.1em;margin-left:.25em;background:#9aa4b0;vertical-align:middle"></span></div>
+<div style="font:400 21px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590;margin-top:10px">Ve bu bir kusur</div>
+</div>
+</div>
+<div style="padding:14px 40px;background:#2a2011;border-top:1px solid #4a3a17;font:400 15px/1.5 'Segoe UI',system-ui,Arial,sans-serif;color:#e8a33d">Output latency is unmeasured and the speakers are live. The microphone may hear the room.</div>
+<div style="display:flex;align-items:center;gap:26px;padding:15px 40px;background:#12161b;border-top:1px solid #232a32;flex-wrap:wrap">
+<span style="width:11px;height:11px;border-radius:50%;background:#5ec8a0;flex:none"></span>
+<span style="font:400 15px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">tr → it</span>
+<span style="font:400 15px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">sentences <span style="color:#f4f6f8;font-weight:600">11</span></span>
+<span style="font:400 15px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">provisional <span style="color:#f4f6f8;font-weight:600">38</span></span>
+<span style="font:400 15px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">last lag <span style="color:#f4f6f8;font-weight:600">3.66s</span></span>
+<span style="font:400 15px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#7d8590">voice <span style="color:#f4f6f8;font-weight:600">elena-m</span></span>
+<span style="flex:1"></span>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 17px;border:1px solid #2c343d;border-radius:6px;background:#1a2028;color:#f4f6f8;cursor:pointer">generic voice</button>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 17px;border:1px solid #2c343d;border-radius:6px;background:#1a2028;color:#f4f6f8;cursor:pointer">source</button>
+<button style="font:400 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 17px;border:1px solid #2c343d;border-radius:6px;background:#1a2028;color:#f4f6f8;cursor:pointer">full screen</button>
+<button style="font:700 14px/1 'Segoe UI',system-ui,Arial,sans-serif;padding:9px 17px;border:1px solid #e24b4a;border-radius:6px;background:#e24b4a;color:#fff;cursor:pointer">UNMUTE</button>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Coverage map — every route and control, and where it lives. The double-check.</div>
+<div class="dv-card" style="width:1400px;background:#faf9f7;font-family:'Segoe UI',system-ui,Arial,sans-serif">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;padding:24px 28px">
+
+<div>
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:12px">HTTP API — 14 ROUTES</div>
+<div style="display:flex;flex-direction:column;gap:1px">
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">the whole of <a class="dv-oid" href="#2a">2a</a></span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/screen</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a"><a class="dv-oid" href="#2b">2b</a>, plus the Audience screen button</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/events</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">subtitle stack, stats, header pulse</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/state</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">all four Live stat cards + gate warning</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/pipeline</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">header Start/Stop, idle + starting + failed cards</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#134b83">POST</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/pipeline/{action}</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Start / Stop / Start listening</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/devices</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Setup → device table, host API + latency</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#134b83">POST</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/devices</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">the two pickers; selected / live / substituted line</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/voices</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Voices table, volunteer flag, consent column</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#a32d2d">DELETE</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/voices</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Delete all volunteer recordings</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#134b83">POST</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/voices/record</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Clone a volunteer — name, consent, length, gated %</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#134b83">POST</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/voice</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">per-row <em>use</em>, Generic voice, key <strong>G</strong></span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#134b83">POST</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/mute</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">header Mute, key <strong>M</strong>, AUDIO MUTED banner</span></div>
+<div style="display:grid;grid-template-columns:70px 200px 1fr;gap:10px;padding:9px 0"><span style="font:600 13px/1.4 ui-monospace,Consolas,monospace;color:#3b6d11">GET</span><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">/preflight</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Setup → checklist, all three levels</span></div>
+</div>
+</div>
+
+<div>
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:12px">SURFACED FROM THE PIPELINE ITSELF</div>
+<div style="display:flex;flex-direction:column;gap:1px;margin-bottom:22px">
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">DeliveryEvent per-stage</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Last sentence card — the five-stage bar</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">partial / provisional</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">italic dimmed line, revised in place, never spoken</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">GateStats</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Half-duplex gate card — including speech lost</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">gate_warning</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">amber banner on Live, dot on the Setup tab</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">ClipStats.gated_fraction</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">a column in the Voices table, not a hidden warning</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">measure_vram_budget</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Setup → VRAM bar, peak and headroom</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">measure_audio_device</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Setup → the three runs and the jitter note</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">AudioPlayback.flush()</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">Flush playback — the panic control, beside Mute</span></div>
+</div>
+
+<div style="font:400 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#5f5e5a;margin-bottom:12px">DELIBERATELY NOT IN THE UI</div>
+<div style="display:flex;flex-direction:column;gap:1px">
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">eval / bench / sweep</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">offline measurement, not a stage control</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">config / model swap</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">unknown keys are rejected; a live swap is not safe</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #e0ddd6"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">Friulian clip playback</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">listed as a known gap, so shown as one</span></div>
+<div style="display:grid;grid-template-columns:230px 1fr;gap:10px;padding:9px 0"><span style="font:400 13px/1.4 ui-monospace,Consolas,monospace;color:#1c1b19">OllamaBackend</span><span style="font:400 13px/1.4 'Segoe UI',system-ui,Arial,sans-serif;color:#5f5e5a">exists and is not used — it dropped a negation</span></div>
+</div>
+
+<div style="margin-top:22px;padding:14px 16px;border-radius:8px;background:#f3f1ed;font:400 13px/1.6 'Segoe UI',system-ui,Arial,sans-serif;color:#1c1b19">Two things I could not decide for you. <strong>Whether the operator window should also serve the projected screen on one monitor</strong> — the code keeps them separate on purpose. And <strong>whether the latency breakdown belongs on stage at all</strong>: it is the most interesting number in the project and also the one that makes an operator watch a graph instead of the room.</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make the Live tab the whole window, move everything else behind a settings sheet" · "the audience screen needs a Friulian mode" · "add the ASR/MT quality numbers to Setup"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Three directions — single-screen local translation tool</span></div>
+<p class="dv-note">Built from your answers: desktop web, English UI, single screen, model &amp; language selection plus translation history. I could not read <span style="font-family:ui-monospace,Menlo,monospace">translation_local</span> — the folder didn't come through on my side — so all model names, engines and copy are placeholders. Paste the README and I'll swap in the real vocabulary.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Studio — two panes, history rail. The by-the-book read.</div>
+<div class="dv-card" style="width:1180px">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;border-bottom:1px solid rgba(23,21,15,.1)">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:14px;height:14px;border-radius:50%;background:#5b7fd4"></div>
+<span style="font:500 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;color:#17150f">translation_local</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="display:flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid rgba(23,21,15,.14);border-radius:20px">
+<div style="width:6px;height:6px;border-radius:50%;background:oklch(0.62 0.14 145)"></div>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">local · mps</span>
+</div>
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:transparent;font:400 12px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.78);cursor:pointer" style-hover="background:rgba(23,21,15,.05)">Settings</button>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid rgba(23,21,15,.1);background:rgba(23,21,15,.02)">
+<div style="display:flex;flex-direction:column;gap:5px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:rgba(23,21,15,.72)">Model</span>
+<div style="display:flex;align-items:center;gap:8px;padding:7px 11px;background:#fff;border:1px solid rgba(23,21,15,.14);border-radius:8px;min-width:216px;cursor:pointer">
+<span style="font:500 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f">nllb-200-distilled</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">600M</span>
+<span style="margin-left:auto;font-size:9px;color:rgba(23,21,15,.72)">▾</span>
+</div>
+</div>
+<div style="width:1px;height:44px;background:rgba(23,21,15,.1);margin-top:14px"></div>
+<div style="display:flex;flex-direction:column;gap:5px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:rgba(23,21,15,.72)">Languages</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="padding:7px 12px;background:#fff;border:1px solid rgba(23,21,15,.14);border-radius:8px;font:500 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;cursor:pointer">English <span style="color:rgba(23,21,15,.72);font-size:9px">▾</span></div>
+<div style="width:26px;height:26px;display:grid;place-items:center;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:#fff;font-size:11px;color:rgba(23,21,15,.74);cursor:pointer">⇄</div>
+<div style="padding:7px 12px;background:#fff;border:1px solid rgba(23,21,15,.14);border-radius:8px;font:500 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;cursor:pointer">Turkish <span style="color:rgba(23,21,15,.72);font-size:9px">▾</span></div>
+</div>
+</div>
+<button style="margin:18px 0 0 auto;padding:10px 22px;border:none;border-radius:8px;background:#17150f;color:#faf8f3;font:500 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer" style-hover="background:#5b7fd4">Translate</button>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 292px;min-height:452px">
+<div style="display:flex;flex-direction:column;padding:18px 20px;border-right:1px solid rgba(23,21,15,.1)">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:rgba(23,21,15,.72)">Source · English</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">412 / 5000</span>
+</div>
+<p style="margin:0;font:400 15px/1.65 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">The pipeline runs entirely on the local machine. Documents are chunked into segments, each segment is passed through the selected model, and the results are stitched back together with the original formatting preserved.</p>
+<p style="margin:14px 0 0;font:400 15px/1.65 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">No text leaves the device at any point in the process.</p>
+<div style="margin-top:auto;padding-top:16px;display:flex;gap:8px">
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:transparent;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.76);cursor:pointer">Paste</button>
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:transparent;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.76);cursor:pointer">Clear</button>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;padding:18px 20px;border-right:1px solid rgba(23,21,15,.1);background:rgba(91,127,212,.035)">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:oklch(0.48 0.13 250)">Target · Turkish</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">1.8s · 42 tok/s</span>
+</div>
+<p style="margin:0;font:400 15px/1.65 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">İşlem hattı tamamen yerel makinede çalışır. Belgeler segmentlere ayrılır, her segment seçilen modelden geçirilir ve sonuçlar özgün biçimlendirme korunarak yeniden birleştirilir.</p>
+<p style="margin:14px 0 0;font:400 15px/1.65 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">Süreç boyunca hiçbir metin cihazdan ayrılmaz.</p>
+<div style="margin-top:auto;padding-top:16px;display:flex;gap:8px">
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:#fff;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;cursor:pointer">Copy</button>
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:#fff;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;cursor:pointer">Save as .txt</button>
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:7px;background:#fff;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.76);cursor:pointer">Retranslate</button>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;padding:18px 16px;gap:4px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:rgba(23,21,15,.72)">History</span>
+<span style="font:400 11px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.72);cursor:pointer">Clear all</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="padding:10px 11px;border-radius:8px;background:#fff;border:1px solid rgba(91,127,212,.35);cursor:pointer">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font:500 11px/1 ui-monospace,Menlo,monospace;color:oklch(0.48 0.13 250)">EN → TR</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">now</span></div>
+<div style="font:400 12px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">The pipeline runs entirely on the local machine. Documents are chunked…</div>
+</div>
+<div style="padding:10px 11px;border-radius:8px;border:1px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font:500 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.74)">DE → EN</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">14:02</span></div>
+<div style="font:400 12px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">Die Konfigurationsdatei liegt im Benutzerverzeichnis und wird beim Start…</div>
+</div>
+<div style="padding:10px 11px;border-radius:8px;border:1px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font:500 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.74)">EN → FR</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">13:47</span></div>
+<div style="font:400 12px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">Release notes for the 0.4 build, including the new segment cache and…</div>
+</div>
+<div style="padding:10px 11px;border-radius:8px;border:1px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font:500 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.74)">TR → EN</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">Yesterday</span></div>
+<div style="font:400 12px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">Kurulum adımları ve gereksinimler aşağıda listelenmiştir…</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Workbench — segment table, run log, status bar. For repeat use and long text.</div>
+<div class="dv-card" style="width:1180px">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:44px;background:#17150f">
+<div style="display:flex;align-items:center;gap:9px">
+<div style="width:11px;height:11px;background:oklch(0.62 0.14 310)"></div>
+<span style="font:500 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.07em;color:#faf8f3">translation_local</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(250,248,243,.68)">v0.4</span>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(250,248,243,.72)">⌘K</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(250,248,243,.72)">Settings</span>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:228px 1fr;min-height:500px">
+<div style="border-right:1px solid rgba(23,21,15,.1);display:flex;flex-direction:column;background:rgba(23,21,15,.025)">
+<div style="padding:14px 14px 10px;font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.72)">Runs</div>
+<div style="padding:0 8px;display:flex;flex-direction:column;gap:1px">
+<div style="padding:4px 6px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.8)">TODAY</div>
+<div style="padding:9px 8px;border-radius:6px;background:#fff;border-left:2px solid oklch(0.62 0.14 310);cursor:pointer">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 12px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f">handbook.md</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">14:31</span></div>
+<div style="margin-top:4px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.74)">EN→TR · 46 seg · nllb-600M</div>
+</div>
+<div style="padding:9px 8px;border-radius:6px;border-left:2px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 12px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.82)">release-notes.txt</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">14:02</span></div>
+<div style="margin-top:4px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">EN→FR · 12 seg · m2m-418M</div>
+</div>
+<div style="padding:9px 8px;border-radius:6px;border-left:2px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 12px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.82)">pasted text</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">11:20</span></div>
+<div style="margin-top:4px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">DE→EN · 3 seg · nllb-600M</div>
+</div>
+<div style="padding:4px 6px;margin-top:8px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.8)">YESTERDAY</div>
+<div style="padding:9px 8px;border-radius:6px;border-left:2px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 12px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.82)">kurulum.md</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">18:55</span></div>
+<div style="margin-top:4px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">TR→EN · 28 seg · nllb-600M</div>
+</div>
+<div style="padding:9px 8px;border-radius:6px;border-left:2px solid transparent;cursor:pointer" style-hover="background:rgba(23,21,15,.04)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 12px/1.2 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.82)">api-docs.md</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">16:10</span></div>
+<div style="margin-top:4px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">EN→ES · 91 seg · m2m-418M</div>
+</div>
+</div>
+<div style="margin-top:auto;padding:12px 14px;border-top:1px solid rgba(23,21,15,.1)">
+<div style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.72);margin-bottom:9px">Installed models</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:7px"><div style="width:5px;height:5px;border-radius:50%;background:oklch(0.62 0.14 145)"></div><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#17150f">nllb-600M</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">2.4 GB</span></div>
+<div style="display:flex;align-items:center;gap:7px"><div style="width:5px;height:5px;border-radius:50%;background:rgba(23,21,15,.2)"></div><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">m2m-418M</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">1.9 GB</span></div>
+<div style="display:flex;align-items:center;gap:7px"><div style="width:5px;height:5px;border-radius:50%;background:rgba(23,21,15,.2)"></div><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">opus-mt-en-tr</span><span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72);margin-left:auto">298 MB</span></div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(23,21,15,.1);flex-wrap:wrap">
+<span style="font:500 14px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f">handbook.md</span>
+<span style="padding:4px 9px;border-radius:5px;background:rgba(160,106,196,.12);font:500 11px/1 ui-monospace,Menlo,monospace;color:oklch(0.5 0.14 310)">EN → TR</span>
+<span style="padding:4px 9px;border-radius:5px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">nllb-600M ▾</span>
+<span style="padding:4px 9px;border-radius:5px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">beam 4 ▾</span>
+<div style="margin-left:auto;display:flex;gap:7px">
+<button style="padding:6px 11px;border:1px solid rgba(23,21,15,.14);border-radius:6px;background:transparent;font:400 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.78);cursor:pointer">Export</button>
+<button style="padding:6px 13px;border:none;border-radius:6px;background:#17150f;color:#faf8f3;font:500 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer">Run all</button>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;padding:8px 18px;border-bottom:1px solid rgba(23,21,15,.1);background:rgba(23,21,15,.02)">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,21,15,.72)">#</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,21,15,.72)">Source</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,21,15,.72)">Target</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,21,15,.72);text-align:right">Conf.</span>
+</div>
+
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;gap:0;padding:11px 18px;border-bottom:1px solid rgba(23,21,15,.07);align-items:start">
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">01</span>
+<p style="margin:0;padding-right:20px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);text-wrap:pretty">The pipeline runs entirely on the local machine.</p>
+<p style="margin:0;padding-right:16px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">İşlem hattı tamamen yerel makinede çalışır.</p>
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:oklch(0.52 0.13 145);text-align:right">0.96</span>
+</div>
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;padding:11px 18px;border-bottom:1px solid rgba(23,21,15,.07);align-items:start;background:rgba(160,106,196,.05)">
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">02</span>
+<p style="margin:0;padding-right:20px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);text-wrap:pretty">Documents are chunked into segments, each segment is passed through the selected model.</p>
+<p style="margin:0;padding-right:16px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">Belgeler segmentlere ayrılır, her segment seçilen modelden geçirilir.</p>
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:oklch(0.52 0.13 145);text-align:right">0.91</span>
+</div>
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;padding:11px 18px;border-bottom:1px solid rgba(23,21,15,.07);align-items:start">
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">03</span>
+<p style="margin:0;padding-right:20px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);text-wrap:pretty">Results are stitched back together with the original formatting preserved.</p>
+<p style="margin:0;padding-right:16px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">Sonuçlar özgün biçimlendirme korunarak yeniden birleştirilir.</p>
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:oklch(0.5 0.14 65);text-align:right">0.78</span>
+</div>
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;padding:11px 18px;border-bottom:1px solid rgba(23,21,15,.07);align-items:start">
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">04</span>
+<p style="margin:0;padding-right:20px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);text-wrap:pretty">No text leaves the device at any point in the process.</p>
+<p style="margin:0;padding-right:16px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:#17150f;text-wrap:pretty">Süreç boyunca hiçbir metin cihazdan ayrılmaz.</p>
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:oklch(0.52 0.13 145);text-align:right">0.94</span>
+</div>
+<div style="display:grid;grid-template-columns:38px 1fr 1fr 74px;padding:11px 18px;border-bottom:1px solid rgba(23,21,15,.07);align-items:start">
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">05</span>
+<p style="margin:0;padding-right:20px;font:400 13px/1.55 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.8);text-wrap:pretty">A segment cache skips work that has already been translated with the same model.</p>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="flex:1;height:3px;border-radius:2px;background:rgba(23,21,15,.1);overflow:hidden"><div style="width:38%;height:100%;background:oklch(0.62 0.14 310)"></div></div>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">…</span>
+</div>
+<span style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.62);text-align:right">—</span>
+</div>
+
+<div style="margin-top:auto;display:flex;align-items:center;gap:20px;padding:0 18px;height:34px;border-top:1px solid rgba(23,21,15,.1);background:rgba(23,21,15,.03)">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82)">4 / 46 segments</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82)">42 tok/s</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82)">mps · 6.1 GB / 18 GB</span>
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);margin-left:auto">cache hit 31%</span>
+<span style="display:flex;align-items:center;gap:6px;font:400 11px/1 ui-monospace,Menlo,monospace;color:oklch(0.52 0.13 145)"><span style="width:5px;height:5px;border-radius:50%;background:oklch(0.62 0.14 145);display:inline-block"></span>offline</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Canvas — one column, command-driven, history as a timeline. The unconventional take.</div>
+<div class="dv-card" style="width:1180px;background:#f4f2ec">
+<div style="display:flex;align-items:center;gap:8px;padding:16px 28px 0;overflow:hidden">
+<span style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.72);margin-right:6px">History</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="padding:5px 10px;border-radius:20px;background:#17150f;font:500 11px/1 ui-monospace,Menlo,monospace;color:#faf8f3;cursor:pointer">EN→TR · now</div>
+<div style="padding:5px 10px;border-radius:20px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);cursor:pointer" style-hover="background:rgba(23,21,15,.12)">EN→FR · 14:02</div>
+<div style="padding:5px 10px;border-radius:20px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);cursor:pointer" style-hover="background:rgba(23,21,15,.12)">DE→EN · 11:20</div>
+<div style="padding:5px 10px;border-radius:20px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);cursor:pointer" style-hover="background:rgba(23,21,15,.12)">TR→EN · yst</div>
+<div style="padding:5px 10px;border-radius:20px;background:rgba(23,21,15,.06);font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);cursor:pointer" style-hover="background:rgba(23,21,15,.12)">EN→ES · yst</div>
+<div style="padding:5px 8px;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.72)">+ 41 more</div>
+</div>
+</div>
+
+<div style="padding:34px 28px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+<div>
+<div style="display:flex;align-items:baseline;gap:14px">
+<span style="font:500 62px/0.95 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.035em;color:#17150f;cursor:pointer">English</span>
+<span style="font:300 40px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:oklch(0.62 0.14 310)">→</span>
+<span style="font:500 62px/0.95 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.035em;color:#17150f;cursor:pointer">Türkçe</span>
+</div>
+<div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+<span style="font:400 12px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82);border-bottom:1px dashed rgba(23,21,15,.66);padding-bottom:2px;cursor:pointer">nllb-200-distilled-600M</span>
+<span style="font:400 12px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.8)">·</span>
+<span style="font:400 12px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.82)">loaded · mps</span>
+</div>
+</div>
+<div style="text-align:right">
+<div style="font:500 30px/1 ui-monospace,Menlo,monospace;color:#17150f">1.8<span style="font-size:15px;color:rgba(23,21,15,.72)">s</span></div>
+<div style="margin-top:6px;font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,21,15,.72)">4 segments · 42 tok/s</div>
+</div>
+</div>
+
+<div style="margin:30px 28px 0;padding:26px 30px;background:#faf8f3;border-radius:8px;border-left:3px solid oklch(0.62 0.14 310)">
+<div style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:rgba(23,21,15,.72);margin-bottom:16px">Source</div>
+<p style="margin:0;max-width:62ch;font:400 17px/1.6 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.74);text-wrap:pretty">The pipeline runs entirely on the local machine. Documents are chunked into segments, each segment is passed through the selected model, and the results are stitched back together with the original formatting preserved. No text leaves the device.</p>
+<div style="height:1px;background:rgba(23,21,15,.1);margin:24px 0"></div>
+<div style="font:400 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.5 0.14 310);margin-bottom:16px">Translation</div>
+<p style="margin:0;max-width:62ch;font:400 25px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.012em;color:#17150f;text-wrap:pretty">İşlem hattı tamamen yerel makinede çalışır. Belgeler segmentlere ayrılır, her segment seçilen modelden geçirilir ve sonuçlar özgün biçimlendirme korunarak yeniden birleştirilir. Hiçbir metin cihazdan ayrılmaz.</p>
+<div style="margin-top:24px;display:flex;gap:8px">
+<button style="padding:8px 14px;border:none;border-radius:7px;background:#17150f;color:#faf8f3;font:500 12px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer">Copy</button>
+<button style="padding:8px 14px;border:1px solid rgba(23,21,15,.15);border-radius:7px;background:transparent;font:400 12px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.78);cursor:pointer" style-hover="background:rgba(23,21,15,.05)">Show segments</button>
+<button style="padding:8px 14px;border:1px solid rgba(23,21,15,.15);border-radius:7px;background:transparent;font:400 12px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.78);cursor:pointer" style-hover="background:rgba(23,21,15,.05)">Try another model</button>
+</div>
+</div>
+
+<div style="margin:26px 28px 26px;display:flex;align-items:center;gap:12px;padding:13px 16px;background:#fff;border:1px solid rgba(23,21,15,.13);border-radius:9px">
+<span style="padding:3px 6px;border-radius:4px;background:rgba(23,21,15,.07);font:500 11px/1.3 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.76)">⌘K</span>
+<span style="font:400 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;color:rgba(23,21,15,.72)">Paste text, drop a file, or type a command — swap languages, change model, reopen a past run</span>
+<span style="margin-left:auto;font:400 11px/1 ui-monospace,Menlo,monospace;color:rgba(23,21,15,.66)">offline</span>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "go with <a class="dv-oid" href="#1b">1b</a> but put history in a drawer like <a class="dv-oid" href="#1a">1a</a>" · "add the file-drop and batch queue to <a class="dv-oid" href="#1c">1c</a>" · "make <a class="dv-oid" href="#1a">1a</a> dark"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: "live", muted: false, voice: "generic", src: true, running: true };
+  renderVals() {
+    const t = this.state.tab;
+    const navBase = { display: "flex", alignItems: "center", gap: "9px", width: "100%",
+      padding: "10px 12px", border: "none", borderRadius: "8px",
+      font: "400 14px/1 'Segoe UI',system-ui,Arial,sans-serif", textAlign: "left", cursor: "pointer" };
+    const pick = (k) => Object.assign({}, navBase,
+      t === k ? { background: "#e6f1fb", color: "#185fa5", fontWeight: 600 }
+              : { background: "transparent", color: "#5f5e5a" });
+    const go = (k) => () => this.setState({ tab: k });
+    return {
+      tabLive: pick("live"), tabVoices: pick("voices"), tabFriulian: pick("friulian"),
+      tabEthics: pick("ethics"), tabSetup: pick("setup"),
+      goLive: go("live"), goVoices: go("voices"), goFriulian: go("friulian"),
+      goEthics: go("ethics"), goSetup: go("setup"),
+      isLive: t === "live", isVoices: t === "voices", isFriulian: t === "friulian",
+      isEthics: t === "ethics", isSetup: t === "setup",
+      muted: this.state.muted,
+      notMuted: !this.state.muted,
+      muteLabel: this.state.muted ? "UNMUTE" : "Mute audio",
+      muteStyle: Object.assign({
+        fontFamily: "'Segoe UI',system-ui,Arial,sans-serif", fontSize: "14px", lineHeight: 1,
+        padding: "8px 16px", borderStyle: "solid", borderWidth: "1px", borderRadius: "8px", cursor: "pointer",
+      }, this.state.muted
+        ? { background: "#e24b4a", borderColor: "#e24b4a", color: "#fff", fontWeight: 600 }
+        : { background: "#fff", borderColor: "#c9c5bb", color: "#1c1b19", fontWeight: 400 }),
+      toggleMute: () => this.setState((s) => ({ muted: !s.muted })),
+      voice: this.state.voice,
+      cloned: this.state.voice !== "generic",
+      voiceHdrStyle: Object.assign({
+        fontFamily: "'Segoe UI',system-ui,Arial,sans-serif", fontSize: "13px", lineHeight: 1.3,
+      }, this.state.voice === "generic" ? { color: "#5f5e5a" } : { color: "#854f0b", fontWeight: 600 }),
+      voiceStatStyle: Object.assign({
+        fontFamily: "'Segoe UI',system-ui,Arial,sans-serif", fontSize: "18px", lineHeight: 1.4,
+        marginTop: "7px", fontWeight: 600,
+      }, this.state.voice === "generic" ? { color: "#1c1b19" } : { color: "#854f0b" }),
+      useVolunteer: () => this.setState({ voice: "elena-m" }),
+      dropVoice: () => this.setState({ voice: "generic" }),
+      srcOn: this.state.src,
+      srcLabel: this.state.src ? "Hide Turkish" : "Show Turkish",
+      toggleSrc: () => this.setState((s) => ({ src: !s.src })),
+      running: this.state.running,
+      stopped: !this.state.running,
+      runLabel: this.state.running ? "Stop" : "Start",
+      toggleRun: () => this.setState((s) => ({ running: !s.running })),
+      pulseStyle: Object.assign({ width: "9px", height: "9px", borderRadius: "50%", flex: "none" },
+        this.state.running ? { background: "#639922" } : { background: "#8a8880" }),
+    };
+  }
+}
+</script>
+</body>
+</html>

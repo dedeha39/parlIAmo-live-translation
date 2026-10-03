@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parliamo"
+version = "0.1.0"
+description = "Fully offline real-time speech translation and voice synthesis on a single consumer laptop"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "parlIAmo project" }]
+keywords = ["speech-translation", "asr", "machine-translation", "tts", "offline", "friulian"]
+
+# Runtime dependencies are installed in stages via requirements/*.txt so that a
+# failure in one stage (e.g. CUDA wheels) does not block the rest of the build.
+# See docs/01-setup.md.
+dependencies = []
+
+[project.scripts]
+parliamo = "parliamo.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+parliamo = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "gpu: requires a CUDA device",
+    "audio: requires a working audio device",
+    "model: requires downloaded model weights",
+    "slow: takes more than ~10 seconds",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]

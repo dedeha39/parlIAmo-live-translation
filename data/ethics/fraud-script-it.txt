@@ -1,0 +1,38 @@
+# The demonstration that protects the audience.
+#
+# Voice fraud aimed at older people is not a politician impression. It is
+# almost always one shape: someone they love, in trouble, needing money now.
+# A deepfaked public figure teaches an audience that public figures get faked.
+# This teaches them that *they* are the target.
+#
+# Spoken in the presenter's own cloned voice, from fifteen seconds of
+# reference. The room hears a voice it has been listening to for an hour say
+# something it never said.
+#
+# The three lines are the actual mechanics of the scam, and each is worth
+# naming out loud afterwards:
+#
+#   1. URGENCY - no time to think, no time to check
+#   2. SECRECY - do not tell anyone, which removes the person who would catch it
+#   3. AN UNUSUAL CHANNEL - a new number, a courier, a transfer that cannot be
+#      reversed
+#
+# The counter is one sentence and it does not depend on hearing anything in the
+# audio: HANG UP AND CALL BACK ON THE NUMBER YOU ALREADY HAVE.
+#
+# Nothing here names a real person. Placeholders are marked so the presenter
+# fills in a name the room recognises - their own child's, or nobody's.
+#
+#   scripts/fraud_demo.py
+
+Mamma, sono io. Scusa se ti chiamo da questo numero, ho perso il telefono.
+
+Ho avuto un incidente con la macchina. Sto bene, ma è successo un guaio serio.
+
+Ti chiamo dall'ufficio di un avvocato. Devo pagare subito, altrimenti la cosa si complica.
+
+Servono duemila euro. Adesso, entro un'ora.
+
+Ti prego, non dirlo a papà, non voglio farlo preoccupare.
+
+Fra poco passa una persona a ritirarli. Consegnali a lei, si fida di me.

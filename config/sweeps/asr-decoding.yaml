@@ -1,0 +1,52 @@
+# Decoding-parameter sweep for Turkish recognition.
+#
+#   python scripts/sweep_asr.py config/sweeps/asr-decoding.yaml
+#
+# Everything below is data. To try a different model, a different quantisation
+# or a different decoding setting, edit this file - no code changes.
+
+dataset:
+  # Leave `manifest` set to evaluate on the presenter's own voice; swap to
+  # `fleurs` to check a change does not regress on neutral public data.
+  manifest: data/insitu/20260830-141246/manifest.tsv
+  # fleurs: tr_tr
+  # limit: 200
+
+# Applied to every variant unless the variant overrides it.
+base:
+  backend: faster_whisper
+  model: large-v3-turbo
+  device: cuda
+  language: tr
+  compute_type: int8_float16
+  beam_size: 1
+  condition_on_previous_text: false
+  temperature: 0.0
+  hotwords_file: config/hotwords.tr.txt
+
+# Cartesian product. Two settings we have never actually measured:
+#
+#   beam_size        we run greedy (1) for latency. The usual advice is 5 for
+#                    accuracy, but nobody has checked what it costs here.
+#   compute_type     int8_float16 was chosen to save VRAM, not because it was
+#                    compared against float16 for accuracy.
+grid:
+  beam_size: [1, 5]
+  compute_type: [int8_float16, float16]
+
+# One-off configurations that are not part of the grid.
+variants:
+  - name: "large-v3 int8 greedy, no hotwords"
+    model: large-v3
+    hotwords_file: null
+
+  - name: "large-v3 int8 greedy, hotwords"
+    model: large-v3
+
+  - name: "turbo, no hotwords"
+    hotwords_file: null
+
+  # Temperature fallback is Whisper's own remedy for a stuck decode. We
+  # disabled it for deterministic latency; this measures what that cost.
+  - name: "turbo, temperature fallback"
+    temperature: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]

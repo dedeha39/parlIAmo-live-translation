@@ -1,0 +1,65 @@
+# parlIAmo - in-situ Turkish reading script
+#
+# Read this aloud into the microphone you will actually present with, using
+# scripts/record_script.py. Each non-comment line is recorded separately, so
+# the line itself becomes the reference transcript and no manual transcription
+# is needed.
+#
+# Read at your presenting pace, not carefully. Ordinary delivery is what we
+# need to measure; over-articulating would flatter the model.
+#
+# Three parts, each measuring something different:
+#   A  everyday sentences        - the baseline
+#   B  presentation vocabulary   - the words you will actually say on stage
+#   C  proper nouns and numbers  - where recognition is expected to fail
+#
+# Roughly 3-4 minutes of speech in total.
+
+# ---------------------------------------------------------------- A: baseline
+
+Merhaba, bugün sizinle biraz teknolojiden bahsetmek istiyorum.
+Bu sunumu hazırlarken aklımdan geçen ilk soru şuydu: acaba gerçekten çalışacak mı?
+Salonda oturanların çoğu bu konuya benden daha uzun süredir kafa yoruyor olabilir.
+Dışarıda hava kapalı ama içerisi oldukça sıcak görünüyor.
+Bir şeyin nasıl çalıştığını anlatmak, onu yapmaktan çoğu zaman daha zordur.
+Geçen hafta bunun üzerinde çalışırken beklemediğim bir sorunla karşılaştım.
+Anlamadığım bir konuda konuşmaktansa susmayı tercih ederim.
+Şu anda duyduğunuz ses benim sesim, ama birazdan bu o kadar da kesin olmayacak.
+İnsanlar yeni bir aracı ilk gördüklerinde genellikle iki şey sorarlar.
+Bunu daha önce hiç denemedim, o yüzden sonucu ben de merak ediyorum.
+Küçük bir hata bile bütün cümlenin anlamını değiştirebilir.
+Gelmiyorum demekle geliyorum demek arasında tek bir hece var.
+
+# ------------------------------------------------- B: presentation vocabulary
+
+Yapay zekâ artık sadece metin üretmiyor, konuşmayı da anlıyor ve üretiyor.
+Bu sistem tamamen bu dizüstü bilgisayarda çalışıyor, hiçbir veri internete çıkmıyor.
+Konuşma tanıma, makine çevirisi ve ses sentezi üç ayrı model tarafından yapılıyor.
+Gerçek zamanlı çeviride asıl gecikme ağdan değil, bağlam beklemekten geliyor.
+Ses klonlama için artık uzun kayıtlara ihtiyaç yok, on beş saniye yetiyor.
+Bu teknolojinin güvenlik açısından ne anlama geldiğini konuşmamız gerekiyor.
+Rıza olmadan birinin sesini kopyalamak teknik bir mesele değil, etik bir mesele.
+Üretilen her ses dosyasına görünmez bir filigran gömülüyor.
+Filigran tespiti işe yarıyor, ama tek başına yeterli bir çözüm değil.
+Azınlık dilleri dijital dünyada sistematik olarak geride kalıyor.
+Bir dil için yeterli veri yoksa, model o dili öğrenemiyor.
+Çeviri kalitesini ölçmek için kelime hata oranı ve karakter hata oranı kullanıyoruz.
+Modelin ekleri kaçırması ile kelimeyi yanlış duyması aynı şey değildir.
+Sesimi klonladım ve şimdi bilmediğim bir dilde konuşuyorum.
+Bu sunumun amacı sizi korkutmak değil, ne olduğunu göstermek.
+
+# ------------------------------------------- C: proper nouns and hard numbers
+
+Friulian, İtalya'nın Friuli Venezia Giulia bölgesinde konuşulan bir dildir.
+Bu dili yaklaşık altı yüz bin kişi konuşuyor.
+ARLeF, Friulian dilinden sorumlu bölgesel kurumun adı.
+Udine ve Gorizia, bölgenin en önemli iki şehri.
+Whisper, Chatterbox ve Silero kullandığımız üç açık kaynak model.
+Avrupa Birliği Yapay Zekâ Yasası'nın ellinci maddesi iki bin yirmi altı Ağustos'ta yürürlüğe girdi.
+Filigran zorunluluğu için tanınan süre iki Aralık'ta doluyor.
+Test setimizde 200 cümle ve toplam 41,9 dakika ses var.
+Kelime hata oranımız yüzde 6,15, karakter hata oranımız yüzde 2,02.
+Ekran kartının belleği 8 gigabayt, bu da bizim en sıkı kısıtımız.
+İstanbul'dan Udine'ye giden yolda yaklaşık 2.400 kilometre var.
+Modeli eğitirken 34.723 cümlelik bir veri kümesiyle başladık.
+Bu rakamların hepsi ölçülmüş değerlerdir, tahmin değil.

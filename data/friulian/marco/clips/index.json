@@ -1,0 +1,281 @@
+{
+  "speaker": "Marco Moroldo",
+  "source": "https://commons.wikimedia.org/wiki/File:Wikitongues-Friulian-Moroldo.webm",
+  "licence": "CC BY-SA 4.0",
+  "note": "A native speaker, recorded for language documentation. Played as recorded, with attribution. Not used as a voice reference: the licence covers the recording, not the speaker's voice.",
+  "clips": [
+    {
+      "n": 1,
+      "file": "marco-001.wav",
+      "start_s": 2.27,
+      "end_s": 13.09,
+      "duration_s": 10.82
+    },
+    {
+      "n": 2,
+      "file": "marco-002.wav",
+      "start_s": 14.08,
+      "end_s": 17.06,
+      "duration_s": 2.98
+    },
+    {
+      "n": 3,
+      "file": "marco-003.wav",
+      "start_s": 17.63,
+      "end_s": 24.35,
+      "duration_s": 6.72
+    },
+    {
+      "n": 4,
+      "file": "marco-004.wav",
+      "start_s": 25.06,
+      "end_s": 40.16,
+      "duration_s": 15.1
+    },
+    {
+      "n": 5,
+      "file": "marco-005.wav",
+      "start_s": 41.02,
+      "end_s": 52.74,
+      "duration_s": 11.71
+    },
+    {
+      "n": 6,
+      "file": "marco-006.wav",
+      "start_s": 53.44,
+      "end_s": 59.71,
+      "duration_s": 6.27
+    },
+    {
+      "n": 7,
+      "file": "marco-007.wav",
+      "start_s": 60.48,
+      "end_s": 79.52,
+      "duration_s": 19.04
+    },
+    {
+      "n": 8,
+      "file": "marco-008.wav",
+      "start_s": 80.1,
+      "end_s": 83.04,
+      "duration_s": 2.94
+    },
+    {
+      "n": 9,
+      "file": "marco-009.wav",
+      "start_s": 83.62,
+      "end_s": 95.17,
+      "duration_s": 11.55
+    },
+    {
+      "n": 10,
+      "file": "marco-010.wav",
+      "start_s": 96.32,
+      "end_s": 116.32,
+      "duration_s": 20.0
+    },
+    {
+      "n": 11,
+      "file": "marco-011.wav",
+      "start_s": 116.8,
+      "end_s": 126.3,
+      "duration_s": 9.5
+    },
+    {
+      "n": 12,
+      "file": "marco-012.wav",
+      "start_s": 127.14,
+      "end_s": 133.57,
+      "duration_s": 6.43
+    },
+    {
+      "n": 13,
+      "file": "marco-013.wav",
+      "start_s": 134.14,
+      "end_s": 149.7,
+      "duration_s": 15.55
+    },
+    {
+      "n": 14,
+      "file": "marco-014.wav",
+      "start_s": 151.1,
+      "end_s": 171.1,
+      "duration_s": 20.0
+    },
+    {
+      "n": 15,
+      "file": "marco-015.wav",
+      "start_s": 171.1,
+      "end_s": 191.1,
+      "duration_s": 20.0
+    },
+    {
+      "n": 16,
+      "file": "marco-016.wav",
+      "start_s": 191.1,
+      "end_s": 197.6,
+      "duration_s": 6.5
+    },
+    {
+      "n": 17,
+      "file": "marco-017.wav",
+      "start_s": 198.27,
+      "end_s": 218.27,
+      "duration_s": 20.0
+    },
+    {
+      "n": 18,
+      "file": "marco-018.wav",
+      "start_s": 218.3,
+      "end_s": 225.09,
+      "duration_s": 6.78
+    },
+    {
+      "n": 19,
+      "file": "marco-019.wav",
+      "start_s": 227.23,
+      "end_s": 234.78,
+      "duration_s": 7.55
+    },
+    {
+      "n": 20,
+      "file": "marco-020.wav",
+      "start_s": 235.36,
+      "end_s": 255.36,
+      "duration_s": 20.0
+    },
+    {
+      "n": 21,
+      "file": "marco-021.wav",
+      "start_s": 255.36,
+      "end_s": 275.36,
+      "duration_s": 20.0
+    },
+    {
+      "n": 22,
+      "file": "marco-022.wav",
+      "start_s": 275.36,
+      "end_s": 286.46,
+      "duration_s": 11.1
+    },
+    {
+      "n": 23,
+      "file": "marco-023.wav",
+      "start_s": 287.78,
+      "end_s": 301.76,
+      "duration_s": 13.98
+    },
+    {
+      "n": 24,
+      "file": "marco-024.wav",
+      "start_s": 302.34,
+      "end_s": 307.46,
+      "duration_s": 5.12
+    },
+    {
+      "n": 25,
+      "file": "marco-025.wav",
+      "start_s": 308.03,
+      "end_s": 328.03,
+      "duration_s": 20.0
+    },
+    {
+      "n": 26,
+      "file": "marco-026.wav",
+      "start_s": 328.06,
+      "end_s": 331.58,
+      "duration_s": 3.52
+    },
+    {
+      "n": 27,
+      "file": "marco-027.wav",
+      "start_s": 332.16,
+      "end_s": 344.51,
+      "duration_s": 12.35
+    },
+    {
+      "n": 28,
+      "file": "marco-028.wav",
+      "start_s": 345.09,
+      "end_s": 360.0,
+      "duration_s": 14.91
+    },
+    {
+      "n": 29,
+      "file": "marco-029.wav",
+      "start_s": 362.62,
+      "end_s": 368.58,
+      "duration_s": 5.95
+    },
+    {
+      "n": 30,
+      "file": "marco-030.wav",
+      "start_s": 370.3,
+      "end_s": 378.34,
+      "duration_s": 8.03
+    },
+    {
+      "n": 31,
+      "file": "marco-031.wav",
+      "start_s": 381.73,
+      "end_s": 401.12,
+      "duration_s": 19.39
+    },
+    {
+      "n": 32,
+      "file": "marco-032.wav",
+      "start_s": 401.73,
+      "end_s": 421.73,
+      "duration_s": 20.0
+    },
+    {
+      "n": 33,
+      "file": "marco-033.wav",
+      "start_s": 421.79,
+      "end_s": 423.97,
+      "duration_s": 2.18
+    },
+    {
+      "n": 34,
+      "file": "marco-034.wav",
+      "start_s": 425.15,
+      "end_s": 445.15,
+      "duration_s": 20.0
+    },
+    {
+      "n": 35,
+      "file": "marco-035.wav",
+      "start_s": 445.41,
+      "end_s": 465.41,
+      "duration_s": 20.0
+    },
+    {
+      "n": 36,
+      "file": "marco-036.wav",
+      "start_s": 465.41,
+      "end_s": 478.05,
+      "duration_s": 12.64
+    },
+    {
+      "n": 37,
+      "file": "marco-037.wav",
+      "start_s": 478.91,
+      "end_s": 486.75,
+      "duration_s": 7.84
+    },
+    {
+      "n": 38,
+      "file": "marco-038.wav",
+      "start_s": 487.62,
+      "end_s": 500.86,
+      "duration_s": 13.25
+    },
+    {
+      "n": 39,
+      "file": "marco-039.wav",
+      "start_s": 501.44,
+      "end_s": 516.9,
+      "duration_s": 15.46
+    }
+  ]
+}

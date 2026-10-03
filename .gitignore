@@ -1,0 +1,63 @@
+# ---- model weights & caches (never commit) ----
+models/
+.cache/
+*.gguf
+*.bin
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+
+# ---- run artifacts ----
+runs/
+logs/
+*.log
+*.jsonl
+
+# ---- data ----
+data/raw/
+data/interim/
+data/processed/
+*.wav
+*.mp3
+*.flac
+*.m4a
+!tests/fixtures/*.wav
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+.venv/
+venv/
+
+# ---- os / editor ----
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# ---- secrets ----
+.env
+config/local.yaml
+models/ct2/
+external/
+checkpoints/
+*.webm
+
+# what a person said in their reference recording (omnivoice_server.py)
+*.transcript.json
+
+# volunteers: their name, their consent record, their voice - never in git.
+# Designed (invented) voices are generated audio, rebuilt from the Studio.
+data/voices/volunteers/
+data/voices/designed/
+
+# rewrite rules for scripts/export_public.py - they name what they hide
+*.local.json

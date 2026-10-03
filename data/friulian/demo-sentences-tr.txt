@@ -1,0 +1,22 @@
+# Sentences for the Friulian segment of the talk, in Turkish.
+#
+# These get translated to Friulian and then checked by a native speaker -
+# which, per ADR 0010, is the whole remaining job. No fine-tuning: NLLB already
+# produces real Friulian, with ordinary mistakes rather than collapse.
+#
+# Kept short and concrete. A prepared demonstration does not need long
+# sentences, and short ones are easier for a reviewer to judge quickly.
+#
+#   scripts/prepare_friulian_demo.py
+
+Friulian, Friuli Venezia Giulia bölgesinde konuşulan bir dildir.
+Yaklaşık altı yüz bin kişi bu dili konuşuyor.
+Bu cümleyi hiç kimse Friulian için eğitmedi.
+Genel bir çeviri modeli bu dili daha önce görmüş, hepsi bu.
+Bu dil için hiçbir konuşma sentezi modeli yok.
+Şu anda duyduğunuz ses İtalyanca fonetiğiyle okunuyor.
+Yani kelimeler Friulian, telaffuz İtalyanca.
+Bu bir kusur değil, göstermek istediğim şeyin ta kendisi.
+Azınlık dilleri dijital dünyada geride kalıyor.
+Ve bu teknik bir sorun değil, nereye emek harcadığımıza dair ortak bir tercih.
+Teşekkür ederim.

@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>parlIAmo — operator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  The operator's window. Laptop distance, one person, who is also the one
+  talking. Deliberately not the same page as /screen: that is read across a
+  room and this is read at arm's length, and the two are different problems.
+
+  Self-contained on purpose. No font, script or stylesheet is fetched from
+  anywhere - the venue has no internet, and the whole claim of the talk is
+  that the network can be unplugged.
+-->
+<style>
+:root{
+  --bg:#faf9f7; --card:#fff; --line:#e0ddd6; --rail:#f3f1ed;
+  --ink:#1c1b19; --dim:#5f5e5a; --mid:#3f3e3a; --edge:#c9c5bb;
+  --blue:#185fa5; --blue-ink:#134b83; --blue-bg:#e6f1fb;
+  --s1:#c9c5bb; --s2:#123f6e; --s3:#185fa5; --s4:#4a86c4; --s5:#89b3d9;
+  --green:#3b6d11; --green-dot:#639922; --green-bg:#eaf3e2;
+  --amber:#854f0b; --amber-bg:#faeeda; --amber-line:#efc07a; --amber-chip:#f6dcb4;
+  --red:#e24b4a; --red-ink:#a32d2d; --red-bg:#f9e3e3;
+  --ui:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  --mono:ui-monospace,Consolas,'Cascadia Mono',Menlo,monospace;
+}
+*{box-sizing:border-box}
+/* `hidden` has to actually hide. Every rule below that sets `display` on a
+   banner, a command chip or a progress bar outranks the browser's default
+   `[hidden]{display:none}`, so the muted banner sat there in red with nothing
+   muted. One line, and it must stay above the rules it defends against. */
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px}
+button{font-family:var(--ui);cursor:pointer}
+h2{font:600 19px/1.3 var(--ui);margin:0 0 4px}
+h3{font:600 17px/1.3 var(--ui);margin:0 0 4px}
+.lede{font:400 14px/1.55 var(--ui);color:var(--dim);margin:0 0 16px;max-width:78ch}
+.mono{font-family:var(--mono)}
+.eyebrow{font:400 12px/1 var(--mono);letter-spacing:.08em;color:var(--dim);margin-bottom:12px}
+
+/* header */
+header{display:flex;align-items:center;gap:12px;padding:11px 18px;background:#fff;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+#pulse{width:9px;height:9px;border-radius:50%;background:var(--edge);flex:none}
+#pulse.live{background:var(--green-dot);animation:beat 2s ease-in-out infinite}
+#pulse.dead{background:var(--red)}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.35}}
+.brand{font:600 15px/1 var(--ui);letter-spacing:-.01em}
+.chip{padding:3px 9px;border-radius:5px;background:var(--rail);font:400 13px/1.3 var(--mono);color:var(--dim)}
+.chip.voice-on{background:var(--amber-bg);color:var(--amber)}
+.spacer{flex:1}
+.lag{font:400 13px/1.3 var(--mono);color:var(--dim)}
+.lag b{color:var(--ink);font-weight:600}
+.btn{font:400 14px/1 var(--ui);padding:8px 16px;border:1px solid var(--edge);
+  border-radius:8px;background:#fff;color:var(--ink)}
+.btn:hover{background:var(--rail)}
+.btn.primary{border-color:var(--blue);background:var(--blue);color:#fff;font-weight:500}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{border-color:var(--red);background:var(--red);color:#fff;font-weight:500}
+.btn.on{border-color:var(--red);background:var(--red);color:#fff;font-weight:600}
+.btn.sm{font-size:13px;padding:6px 13px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* frame */
+.frame{display:grid;grid-template-columns:184px 1fr;min-height:calc(100vh - 47px)}
+nav{background:var(--rail);border-right:1px solid var(--line);padding:10px;
+  display:flex;flex-direction:column;gap:2px}
+nav .tab{display:flex;align-items:center;font:400 14px/1 var(--ui);text-align:left;
+  padding:9px 12px;border:none;border-radius:7px;background:transparent;color:var(--mid);width:100%}
+nav .tab:hover{background:rgba(0,0,0,.04)}
+nav .tab.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+nav .tab .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--amber);display:none}
+nav .tab .dot.show{display:block}
+.keys{margin-top:auto;padding:12px 12px 6px;border-top:1px solid var(--line)}
+.keys .eyebrow{margin-bottom:9px}
+.keyrow{display:flex;gap:8px;align-items:baseline;margin-bottom:6px}
+kbd{font:600 12px/1.3 var(--mono);color:var(--ink);background:#fff;border:1px solid var(--line);
+  border-radius:4px;padding:2px 6px}
+.keyrow span{font:400 12px/1.4 var(--ui);color:var(--dim)}
+main{padding:20px 24px;min-width:0}
+section[hidden]{display:none}
+
+/* cards + banners */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.banner{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:8px;
+  margin-bottom:14px;font:400 13px/1.5 var(--ui)}
+.banner.amber{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber)}
+.banner.red{background:var(--red);color:#fff;align-items:center}
+.banner.red b{font:600 14px/1 var(--ui);letter-spacing:.09em}
+/* Block, not flex: a flex banner turns every inline child into a flex item,
+   so an emphasised word mid-sentence becomes its own column. */
+.banner.blue{display:block;background:var(--blue-bg);border:1px solid var(--blue);
+  color:var(--blue-ink);font-size:14px;line-height:1.55}
+.pill{padding:2px 8px;border-radius:20px;font:600 12px/1.4 var(--ui)}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.warn{background:var(--amber-chip);color:var(--amber)}
+.pill.bad{background:var(--red-bg);color:var(--red-ink)}
+.pill.info{background:var(--blue-bg);color:var(--blue-ink)}
+.pill.mute{background:var(--rail);color:var(--dim)}
+
+/* live */
+.live-grid{display:grid;grid-template-columns:1fr 400px;gap:14px;margin-bottom:14px;align-items:start}
+#stack{min-height:280px;display:flex;flex-direction:column;justify-content:flex-end;gap:12px}
+.said .t{font:400 15px/1.35 var(--ui);color:var(--dim)}
+.said .s{font:400 13px/1.4 var(--ui);color:var(--dim);margin-top:3px}
+.said.n1 .t{font-size:17px;color:var(--mid)}
+.said.n0 .t{font:600 22px/1.3 var(--ui);color:var(--ink);letter-spacing:-.01em}
+.said.prov .t{font:italic 400 22px/1.3 var(--ui);color:var(--dim)}
+.caret{display:inline-block;width:.5em;height:.11em;margin-left:.25em;background:var(--dim);vertical-align:middle}
+.provnote{margin-top:7px;font:400 12px/1 var(--mono);color:var(--amber)}
+.bar{display:flex;height:12px;border-radius:3px;overflow:hidden;margin-bottom:14px;background:var(--rail)}
+.legend{display:flex;flex-direction:column;gap:8px}
+.legend div{display:flex;align-items:center;gap:9px;font:400 13px/1.3 var(--ui)}
+.legend i{width:9px;height:9px;border-radius:2px;flex:none}
+.legend b{margin-left:auto;font:400 13px/1.3 var(--mono);font-weight:400}
+.rule{margin:14px 0;height:1px;background:var(--line)}
+.quads{display:flex;gap:16px;margin-top:12px}
+.quads div div:first-child{font:400 12px/1 var(--mono);color:var(--dim)}
+.quads div div:last-child{font:600 17px/1.2 var(--mono);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.stats .card{border-radius:10px;padding:13px 15px}
+.stats .k{font:400 13px/1.3 var(--ui);color:var(--dim)}
+.stats .v{font:600 26px/1.1 var(--ui);margin-top:4px}
+.gatehead{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.gatehead .t{font:600 15px/1.3 var(--ui)}
+.gatehead .d{font:400 13px/1.4 var(--ui);color:var(--dim)}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.four .k{font:400 12px/1 var(--mono);color:var(--dim)}
+.four .v{font:600 19px/1.2 var(--mono);margin-top:4px}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+.empty{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:40px 20px;text-align:center;margin-bottom:12px}
+.empty .h{font:600 18px/1.3 var(--ui);margin-bottom:6px}
+.empty .p{font:400 14px/1.5 var(--ui);color:var(--dim);margin-bottom:20px}
+.prog{margin-top:12px;height:4px;border-radius:2px;background:var(--rail);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--blue);width:30%;transition:width .4s}
+.cmd{display:inline-block;margin-top:7px;font:400 13px/1.4 var(--mono);background:var(--rail);
+  border-radius:5px;padding:4px 8px;color:var(--ink);user-select:all}
+
+/* tables */
+table{width:100%;border-collapse:collapse;background:var(--card)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+th{font:400 13px/1.3 var(--ui);color:var(--dim);text-align:left;padding:9px 16px;
+  background:var(--rail);border-bottom:1px solid var(--line);font-weight:400}
+td{padding:12px 16px;border-bottom:1px solid var(--line);font:400 14px/1.4 var(--ui);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.volunteer td{background:var(--amber-bg)}
+td.num{font-family:var(--mono);font-size:13px}
+td.right{text-align:right}
+.dashline{display:block;min-height:34px;border-bottom:1px dashed var(--edge)}
+
+/* checklist */
+.checks{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:20px}
+.check{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:none}
+.check .led{width:18px;height:18px;border-radius:50%;flex:none;margin-top:3px}
+.led.ok{background:var(--green-dot)}.led.warn{background:var(--amber)}.led.fail{background:var(--red)}
+.check .t{font:600 14px/1.4 var(--ui)}
+.check .d{font:400 14px/1.55 var(--ui);color:var(--dim);margin-top:3px}
+
+/* forms */
+label{display:block;font:400 13px/1.3 var(--ui);color:var(--dim);margin-bottom:6px}
+input,select{font:400 14px/1 var(--ui);height:38px;padding:0 11px;border:1px solid var(--edge);
+  border-radius:8px;background:#fff;color:var(--ink);width:100%}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+input.required{border-color:var(--blue)}
+textarea{font:400 16px/1.5 var(--ui);padding:10px 12px;border:1px solid var(--edge);border-radius:8px;
+  background:#fff;color:var(--ink);width:100%;resize:vertical}
+textarea:focus{outline:none;border-color:var(--blue)}
+input[type=checkbox]{width:auto;height:auto}
+.check{display:flex;align-items:center;gap:7px;font:400 13px/1.3 var(--ui);color:var(--dim);margin:0}
+.chip{font:400 13px/1.2 var(--ui);padding:6px 10px;border:1px solid var(--line);border-radius:16px;
+  background:var(--card);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--blue)}
+audio{height:32px;max-width:220px}
+.st-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+@media (max-width:1100px){.st-grid{grid-template-columns:1fr}}
+.st-step{font:600 12px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+.st-meta{font:400 13px/1.5 var(--ui);color:var(--dim);margin:8px 0 0}
+.subtabs{display:flex;gap:6px;margin:14px 0 10px;border-top:1px solid var(--line);padding-top:12px}
+.subtabs button{font:500 13px/1 var(--ui);padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.subtabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sliders{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px 20px;margin-top:12px}
+.sl{display:flex;flex-direction:column;gap:4px}
+.sl .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sl .top label{margin:0}
+.sl .val{font:600 13px/1 var(--mono);color:var(--ink)}
+.sl input[type=range]{width:100%;height:auto;padding:0;accent-color:var(--blue)}
+.sl input[type=range]:disabled{opacity:.35}
+.sl .help{font:400 12px/1.4 var(--ui);color:var(--dim)}
+details.adv{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.adv summary{cursor:pointer;font:600 14px/1.4 var(--ui)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.field{flex:1;min-width:180px}
+.pair{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.pair>span{width:86px;font:400 14px/1.3 var(--ui);color:var(--dim);flex:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vbar{height:22px;border-radius:4px;overflow:hidden;display:flex;margin-bottom:12px;background:var(--rail)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.kv .v{font:600 15px/1.4 var(--mono)}
+.note{font:400 13px/1.5 var(--ui);color:var(--dim);margin-top:11px}
+.note.warn{color:var(--amber)}
+@media (max-width:1100px){.live-grid{grid-template-columns:1fr}.two,.stats{grid-template-columns:1fr 1fr}}
+</style>
+
+<header>
+  <span id="pulse"></span>
+  <span class="brand">parlIAmo</span>
+  <span class="chip" id="dir">tr → it</span>
+  <span class="spacer"></span>
+  <span class="lag">last lag <b id="hdr-lag">—</b></span>
+  <span class="chip" id="hdr-voice">voice: generic</span>
+  <button class="btn" id="b-stream">Wait for pause</button>
+  <button class="btn" id="run">Start</button>
+  <button class="btn" id="pause" title="P - stop listening for a video, applause or questions">Pause listening</button>
+  <button class="btn" id="mute">Mute</button>
+</header>
+
+<div class="frame">
+  <nav>
+    <button class="tab on" data-t="live">Live</button>
+    <button class="tab" data-t="voices">Voices</button>
+    <button class="tab" data-t="studio">Studio</button>
+    <button class="tab" data-t="friulian">Friulian</button>
+    <button class="tab" data-t="ethics">Ethics</button>
+    <button class="tab" data-t="setup">Setup<span class="dot" id="setup-dot"></span></button>
+    <div class="keys">
+      <div class="eyebrow">KEYS</div>
+      <div class="keyrow"><kbd>M</kbd><span>mute audio</span></div>
+      <div class="keyrow"><kbd>G</kbd><span>generic voice</span></div>
+      <div class="keyrow"><kbd>S</kbd><span>Turkish source</span></div>
+      <div class="keyrow"><kbd>L</kbd><span>wait → sentences → chunks</span></div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ---------------------------------------------------------- LIVE -->
+    <section id="live">
+      <div class="banner red" id="dead-banner" hidden>
+        <b>NOT CONNECTED</b>
+        <span>This page is talking to a server that is no longer there. Every button is
+          dead. Look at the terminal: if it printed a different port (8771), open that
+          address instead; if it exited, start it again — reloading this tab will not help.</span>
+      </div>
+      <div class="banner red" id="pause-banner" hidden>
+        <b>LISTENING PAUSED</b>
+        <span>The microphone is ignored - the meter still moves, nothing is translated.
+          What you said before pressing P is still translated. Press <b>P</b> to listen again.</span>
+      </div>
+      <div class="banner red" id="mute-banner" hidden>
+        <b>AUDIO MUTED</b>
+        <span>Playback is flushed and the half-duplex gate is released. Subtitles continue.</span>
+      </div>
+      <div class="banner amber" id="gate-banner" hidden><span id="gate-banner-text"></span></div>
+
+      <div id="idle">
+        <div class="empty">
+          <div class="h" id="idle-h">Not running</div>
+          <div class="p" id="idle-p">The microphone is closed. Nothing is being recognised.</div>
+          <button class="btn primary" id="idle-start" style="font-size:16px;padding:13px 30px">Start listening</button>
+        </div>
+        <div class="card" id="idle-detail" hidden>
+          <div class="eyebrow" id="idle-status">STATUS</div>
+          <div style="font:600 16px/1.3 var(--ui)" id="idle-title"></div>
+          <div style="font:400 14px/1.5 var(--ui);color:var(--dim);margin-top:5px" id="idle-body"></div>
+          <div class="prog" id="idle-prog" hidden><i id="idle-prog-bar"></i></div>
+          <div class="cmd" id="idle-cmd" hidden></div>
+        </div>
+      </div>
+
+      <div id="running" hidden>
+        <div class="live-grid">
+          <div class="card"><div id="stack"></div></div>
+          <div class="card">
+            <div class="eyebrow" id="last-head">LAST SENTENCE</div>
+            <div class="bar" id="bar"></div>
+            <div class="legend" id="legend"></div>
+            <div class="rule"></div>
+            <div style="font:400 13px/1.55 var(--ui);color:var(--dim)">
+              Only the commit wait is a choice. The tail is driven by sentence length, not by the pipeline.
+            </div>
+            <div class="quads">
+              <div><div>mean</div><div id="q-mean">—</div></div>
+              <div><div>p50</div><div id="q-p50">—</div></div>
+              <div><div>p95</div><div id="q-p95">—</div></div>
+              <div><div>subtitle</div><div id="q-sub" style="color:var(--blue)">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="card"><div class="k">sentences</div><div class="v" id="s-del">0</div></div>
+          <div class="card"><div class="k">provisional</div><div class="v" id="s-par">0</div></div>
+          <div class="card"><div class="k">last lag</div><div class="v" id="s-lag">—</div></div>
+          <div class="card"><div class="k">voice</div><div class="v" id="s-voice">generic</div>
+            <div id="s-voice-note" style="font:400 12px/1.4 var(--ui);color:var(--dim);margin-top:4px"></div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div class="gatehead">
+            <span class="t">Half-duplex gate</span>
+            <span class="d">closed while the speakers are live, so the system cannot translate itself</span>
+            <span class="pill ok" id="gate-pill" style="margin-left:auto">open</span>
+          </div>
+          <div class="four">
+            <div><div class="k">closes</div><div class="v" id="g-closes">0</div></div>
+            <div><div class="k">muted</div><div class="v" id="g-muted">0.0 s</div></div>
+            <div><div class="k">speech lost to the gate</div><div class="v" id="g-lost">0 blocks</div></div>
+            <div><div class="k">tail</div><div class="v" id="g-tail">—</div></div>
+          </div>
+        </div>
+
+        <!-- Is the microphone hearing anything right now? The first question
+             on a stage when no subtitle appears, and the one that was
+             answered by a log dive until this existed. -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="gatehead" style="margin-bottom:8px">
+            <span class="t">Microphone</span>
+            <span class="d" id="mic-device">—</span>
+            <span class="pill mute" id="mic-pill" style="margin-left:auto">—</span>
+          </div>
+          <div class="bar" id="mic-bar" style="height:8px;margin:0 0 8px"><div id="mic-fill" style="width:0;background:var(--green-dot);transition:width .2s"></div></div>
+          <div class="four">
+            <div><div class="k">level now</div><div class="v" id="m-now">—</div></div>
+            <div><div class="k">loudest this run</div><div class="v" id="m-max">—</div></div>
+            <div><div class="k">utterances</div><div class="v" id="m-segs">0</div></div>
+            <div><div class="k">blocks</div><div class="v" id="m-blocks">0</div></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="b-screen">Audience screen ↗</button>
+          <button class="btn" id="b-generic">Generic voice</button>
+          <button class="btn" id="b-src">Show Turkish</button>
+          <button class="btn" id="b-flush">Flush playback</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- -------------------------------------------------------- VOICES -->
+    <section id="voices" hidden>
+      <h2>Voices</h2>
+      <p class="lede">Whose voice the system speaks in. <span class="mono">VoiceProfile.validate()</span>
+        refuses a profile with an empty consent record, at startup and again on a mid-talk swap.
+        A volunteer's recording is deleted when the session ends — the consent form says so.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>voice</th><th style="width:240px">consent</th>
+            <th style="width:180px">gated by the driver</th><th style="width:96px"></th></tr></thead>
+          <tbody id="voice-rows"><tr><td colspan="4" style="color:var(--dim)">loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-bottom:24px;align-items:center">
+        <button class="btn" id="v-generic">Back to generic voice</button>
+        <button class="btn danger" id="v-forget">Delete all volunteer recordings</button>
+        <span style="font:400 13px/1.4 var(--ui);color:var(--dim)">unloads the voice too — a voice whose recording is gone must not stay loaded</span>
+      </div>
+
+      <h2>Clone a volunteer</h2>
+      <p class="lede">Fifteen seconds, which is the point of the segment. Ask before it rather than
+        during it, and make refusing easy. Consent is checked before the microphone opens —
+        a recording made and then refused is a recording that existed.</p>
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <div class="field"><label for="cl-name">Their name</label>
+            <input id="cl-name" placeholder="Elena M."></div>
+          <div class="field" style="flex:2;min-width:240px">
+            <label for="cl-consent">Signed form reference — required</label>
+            <input id="cl-consent" class="required" placeholder="ref 007"></div>
+          <div style="width:110px"><label for="cl-secs">Length</label>
+            <select id="cl-secs"><option>10</option><option selected>15</option><option>20</option><option>30</option></select></div>
+        </div>
+        <div class="row" style="align-items:center">
+          <button class="btn primary" id="cl-go">Record and use</button>
+          <span id="cl-status" style="font:400 13px/1.5 var(--ui);color:var(--dim)"></span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
+          font:400 13px/1.5 var(--ui);color:var(--amber)">
+          Above 40% gated the tool says so plainly: the microphone removed most of that
+          recording, so the clone will sound poor.
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------ STUDIO -->
+    <section id="studio" hidden>
+      <h2>Studio</h2>
+      <p class="lede">Everything OmniVoice can do, on demand: a typed sentence in a voice that has a
+        consent record, in one invented from attributes, or in one the model picks - with laughs and
+        sighs, in 646 languages, with every setting it has. The grandchild's call in a volunteer's
+        voice, ready in half a minute, no microphone involved. Needs the OmniVoice service (port
+        8767), not the pipeline.</p>
+      <div class="banner amber" id="st-down" hidden><span id="st-down-text"></span></div>
+
+      <div class="st-grid">
+        <div class="card">
+          <div class="st-step">1 · Voice</div>
+          <label for="st-voice">Speak as</label>
+          <select id="st-voice"></select>
+          <p class="st-meta" id="st-voice-meta"></p>
+          <div class="row" style="margin-top:8px;align-items:center">
+            <label class="check" id="st-redesign-box" hidden><input type="checkbox" id="st-redesign">
+              speak it from its description in the chosen language (the accent then applies to that language; the seed holds the voice)</label>
+            <button class="btn sm danger" id="st-del-voice" hidden>Delete this voice</button>
+          </div>
+          <div id="st-tr-box" hidden>
+            <label for="st-tr" style="margin-top:12px">What the recording says - OmniVoice clones better when this matches it word for word</label>
+            <textarea id="st-tr" rows="3" placeholder="not prepared yet"></textarea>
+            <div class="row" style="margin-top:8px;align-items:center">
+              <button class="btn sm" id="st-prep">Prepare now</button>
+              <button class="btn sm" id="st-tr-save">Save correction</button>
+              <span id="st-tr-status" style="font:400 13px/1.4 var(--ui);color:var(--dim)"></span>
+            </div>
+          </div>
+          <div class="subtabs" role="tablist">
+            <button class="on" data-sub="rec">Record a voice</button>
+            <button data-sub="up">Upload a file</button>
+            <button data-sub="inv">Invent a voice</button>
+          </div>
+          <div data-pane="rec">
+            <div class="row" style="align-items:flex-end">
+              <div class="field"><label for="rc-name">Their name</label><input id="rc-name" placeholder="Elena M."></div>
+              <div class="field"><label for="rc-consent">Signed form reference - required</label><input id="rc-consent" class="required" placeholder="ref 007"></div>
+              <div class="field" style="max-width:100px"><label for="rc-secs">Seconds</label>
+                <select id="rc-secs"><option>10</option><option selected>15</option><option>20</option><option>30</option></select></div>
+              <button class="btn primary" id="rc-go">Record</button>
+            </div>
+            <p class="st-meta">Uses the pipeline's microphone. Ask them to read whole sentences and stop at a
+              full stop: a recording cut mid-phrase makes the clone drop first words.</p>
+          </div>
+          <div data-pane="up" hidden>
+            <div class="row" style="align-items:flex-end">
+              <div class="field" style="min-width:220px"><label for="up-file">Recording (any format the browser plays - an iPhone voice memo works)</label>
+                <input id="up-file" type="file" accept="audio/*,.m4a,.wav,.mp3,.ogg,.flac" style="padding-top:8px"></div>
+              <div class="field"><label for="up-name">Whose voice</label><input id="up-name" placeholder="Elena M."></div>
+              <div class="field"><label for="up-consent">Signed form reference - required</label><input id="up-consent" class="required" placeholder="ref 007"></div>
+              <button class="btn primary" id="up-go">Upload</button>
+            </div>
+            <p class="st-meta">Kept like a recorded volunteer: listed in the Voices tab and deleted with them.
+              The first minute is kept; OmniVoice uses up to 12 s of it.</p>
+          </div>
+          <div data-pane="inv" hidden>
+            <div class="chips" style="margin-bottom:12px">
+              <button type="button" class="chip on" data-mode="attr">From attributes</button>
+              <button type="button" class="chip" data-mode="rec">From a recording (upload or pick)</button>
+            </div>
+            <div data-mode-pane="rec" hidden>
+              <div class="row" style="align-items:flex-end">
+                <div class="field" style="min-width:220px"><label for="dv-source">Start from</label><select id="dv-source"></select></div>
+                <div class="field"><label for="dv-name">New voice's name</label><input id="dv-name" placeholder="elena-older"></div>
+              </div>
+              <div class="row" id="dv-upload" style="align-items:flex-end;margin-top:10px" hidden>
+                <div class="field" style="min-width:220px"><label for="dv-file">Recording (an iPhone voice memo works)</label>
+                  <input id="dv-file" type="file" accept="audio/*,.m4a,.wav,.mp3,.ogg,.flac" style="padding-top:8px"></div>
+                <div class="field"><label for="dv-whose">Whose voice</label><input id="dv-whose" placeholder="Elena M."></div>
+                <div class="field"><label for="dv-consent">Signed form reference - required</label><input id="dv-consent" class="required" placeholder="ref 007"></div>
+              </div>
+              <div class="sliders">
+                <div class="sl"><div class="top"><label for="dv-semi">Pitch (semitones)</label><span class="val" id="dv-semi-v">0</span></div>
+                  <input type="range" id="dv-semi" min="-8" max="8" step="0.5" value="-4">
+                  <span class="help">Lower sounds older and heavier, higher younger and lighter. The clone follows it (measured -6/+4/+8 in, -5.1/+4.0/+8.3 out); past about ±6 words start to break.</span></div>
+                <div class="sl"><div class="top"><label for="dv-tempo">Tempo</label><span class="val" id="dv-tempo-v">1</span></div>
+                  <input type="range" id="dv-tempo" min="0.8" max="1.25" step="0.05" value="1">
+                  <span class="help">Slower or faster speech in the new voice.</span></div>
+              </div>
+              <div class="row" style="margin-top:10px"><button class="btn primary" id="dv-go">Derive</button></div>
+              <p class="st-meta">OmniVoice ignores a description added to a real recording - "very high pitch" and "very low
+                pitch" left a clone within 4 Hz - so a recording is changed by changing the recording. The new voice is still
+                that person's: it carries their consent and is deleted with the volunteers.</p>
+            </div>
+            <div data-mode-pane="attr">
+            <div class="row" style="align-items:flex-end">
+              <div class="field"><label for="dz-name">Name</label><input id="dz-name" placeholder="nonna-inventata"></div>
+              <div class="field" style="max-width:120px"><label for="dz-gender">Gender</label><select id="dz-gender"></select></div>
+              <div class="field" style="max-width:150px"><label for="dz-age">Age</label><select id="dz-age"></select></div>
+              <div class="field" style="max-width:170px"><label for="dz-pitch">Pitch</label><select id="dz-pitch"></select></div>
+            </div>
+            <div class="row" style="align-items:flex-end;margin-top:10px">
+              <div class="field" style="max-width:200px"><label for="dz-accent">Accent (colours English)</label><select id="dz-accent"></select></div>
+              <div class="field" style="max-width:150px"><label for="dz-seed">Seed (optional)</label><input id="dz-seed" inputmode="numeric" placeholder="random"></div>
+              <label class="check" style="height:38px"><input type="checkbox" id="dz-whisper"> whisper</label>
+              <button class="btn primary" id="dz-go">Invent</button>
+            </div>
+            <p class="st-meta">A voice that belongs to no one, saved as a reference so the same character can
+              speak again - here, or live from the Voices tab. A public figure's voice, or a cartoon
+              character's (a voice actor's), is not offered: it has no consent record.</p>
+            </div>
+          </div>
+          <div id="st-new-status" class="note"></div>
+        </div>
+
+        <div class="card">
+          <div class="st-step">2 · What it says</div>
+          <div class="row" style="margin-bottom:10px">
+            <div class="field"><label for="st-lang">Language</label><select id="st-lang"></select></div>
+          </div>
+          <label for="st-text">Text</label>
+          <textarea id="st-text" rows="4">Nonna, sono io. Ho avuto un incidente, mi servono soldi subito. Non dirlo a nessuno.</textarea>
+          <label style="margin-top:10px">Sounds - inserted where the cursor is</label>
+          <div class="chips" id="st-nv"></div>
+          <label style="margin-top:10px">Examples</label>
+          <div class="chips" id="st-examples"></div>
+          <label class="check" style="margin-top:12px"><input type="checkbox" id="st-lines"> one clip per line</label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="st-step">3 · Settings</div>
+        <div class="row" style="align-items:flex-end">
+          <div class="field" style="max-width:220px"><label for="st-seed">Seed - the same seed repeats a render</label>
+            <input id="st-seed" inputmode="numeric" placeholder="random each time"></div>
+          <div id="st-flags" class="row" style="align-items:center;gap:16px"></div>
+        </div>
+        <details class="adv" id="st-adv" open>
+          <summary>Advanced settings</summary>
+          <div class="sliders" id="st-sliders"></div>
+          <div class="row" style="margin-top:12px"><button class="btn sm" id="st-reset">Reset to defaults</button></div>
+        </details>
+        <div class="row" style="align-items:center;margin-top:16px">
+          <button class="btn primary" id="st-go">Speak</button>
+          <label class="check"><input type="checkbox" id="st-play" checked> play on the speakers when ready</label>
+          <span id="st-status" style="font:400 13px/1.5 var(--ui);color:var(--dim)"></span>
+        </div>
+        <div class="note warn" id="st-live-note" hidden>The pipeline is running. "Play" sends the clip
+          through its playback, which keeps the microphone shut; the browser's own player does not -
+          press M first if you use it, or the system will translate the clip.</div>
+        <div class="note">Each render differs. Listen in the browser before playing it to the room; when one is
+          right, "Reuse" keeps its seed and settings.</div>
+      </div>
+
+      <h2>Clips</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>text</th><th style="width:140px">voice</th><th style="width:44px">lang</th>
+            <th style="width:120px">settings</th><th style="width:230px">listen</th><th style="width:210px"></th></tr></thead>
+          <tbody id="st-clips"><tr><td colspan="6" style="color:var(--dim)">no clips yet</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------ FRIULIAN -->
+    <section id="friulian" hidden>
+      <h2>Friulian</h2>
+      <p class="lede">Prepared sentences, translated straight from Turkish by NLLB-200 with no
+        fine-tuning and no Friulian training data. What is missing is a native speaker's
+        judgement — <span class="mono">data/friulian/review-sheet.md</span> holds the blanks,
+        awaiting ARLeF.</p>
+      <div class="banner blue">No text-to-speech model for Friulian exists anywhere — checked
+        against MMS-TTS (1100+ languages), eSpeak NG (222 voices) and ElevenLabs (32). These are
+        read with <strong>Italian</strong> phonetics, and that is disclosed on stage rather than hidden.</div>
+      <div class="banner amber" id="fur-mic-warn" hidden><span>The pipeline is running and the
+        microphone will hear whatever plays here — it will transcribe a clip as if someone
+        spoke it. Mute or stop before playing.</span></div>
+
+      <div id="fur-native" hidden>
+        <h3 id="fur-native-h">A native speaker</h3>
+        <p class="lede" id="fur-native-lede"></p>
+        <div class="card" style="margin-bottom:20px">
+          <div class="banner blue" id="fur-native-note" style="margin:0 0 12px"></div>
+          <div id="fur-native-clips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+
+      <h3>What the pipeline makes of it</h3>
+      <p class="lede">Each row's clip is the pipeline's rendering — Friulian text through the
+        Italian frontend. Play a native line above, then one of these, and the gap is the point
+        of the segment.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th style="width:44px">#</th><th>Friulian — to check</th>
+            <th>Italian, meaning only</th><th style="width:160px">Correction</th>
+            <th style="width:70px"></th></tr></thead>
+          <tbody id="fur-rows"><tr><td colspan="5" style="color:var(--dim)">loading…</td></tr></tbody>
+        </table>
+      </div>
+      <audio id="fur-player" preload="none"></audio>
+    </section>
+
+    <!-- -------------------------------------------------------- ETHICS -->
+    <section id="ethics" hidden>
+      <h2>Ethics</h2>
+      <p class="lede">This project clones voices, and that capability is the subject of the
+        presentation rather than a side effect of it. These are the parts the audience can act on.</p>
+      <div class="checks">
+        <div class="check"><span class="led ok"></span><div>
+          <div class="t">Consent is enforced in code</div>
+          <div class="d">A voice without a consent record is refused before anything loads — at
+            startup, and again on a mid-talk swap. It has refused since the first week.</div></div></div>
+        <div class="check"><span class="led ok"></span><div>
+          <div class="t">Every demo clip announces itself</div>
+          <div class="d">“Questa voce è sintetica” at the start, the end, and unpredictable interior
+            points chosen with <span class="mono">secrets.SystemRandom</span> and moved to the
+            quietest nearby sample. A fixed pattern can be trimmed out; this cannot.</div></div></div>
+        <div class="check"><span class="led warn"></span><div>
+          <div class="t">This pipeline does not watermark</div>
+          <div class="d">Perth recovers Chatterbox's mark perfectly and finds nothing in
+            Kokoro + Seed-VC. No watermark means only that whatever made this did not mark it —
+            not that the audio is real. Detection threshold 0.75.</div>
+          <div class="cmd">scripts\ethics_demo.py --with-chatterbox</div></div></div>
+        <div class="check"><span class="led ok"></span><div>
+          <div class="t">Public figures are out of scope</div>
+          <div class="d">Regardless of technical feasibility. Reference recordings never leave the
+            machine and are deleted after the event.</div></div></div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <div class="eyebrow">EU AI ACT ARTICLE 50</div>
+          <div class="kv"><span>In force</span><span class="v">2 Aug 2026</span></div>
+          <div class="kv"><span>Watermarking grace ends</span><span class="v" style="color:var(--amber)">2 Dec 2026</span></div>
+          <div class="note">Full reasoning and the consent form: <span class="mono">docs/07-ethics-and-consent.md</span></div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">MODEL LICENCES</div>
+          <div class="kv"><span>This code</span><span class="v" style="color:var(--green);font-size:13px">Apache-2.0</span></div>
+          <div class="kv"><span>NLLB-200</span><span class="v" style="color:var(--amber);font-size:13px">CC-BY-NC</span></div>
+          <div class="note">Non-commercial. Read <span class="mono">docs/08-model-licences.md</span>
+            before building anything commercial on top.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------- SETUP -->
+    <section id="setup" hidden>
+      <h2>Setup</h2>
+      <p class="lede">What would go wrong if you started right now. Nothing here blocks starting —
+        whether a warning is acceptable is a judgement for the person on stage.</p>
+      <div class="checks" id="preflight"></div>
+
+      <h3>Languages</h3>
+      <p class="lede">Which way the system translates. Applies at the next start: the recogniser,
+        the translator and the voice are all built for a pair. NLLB-200 handles every pair
+        below in either direction; whether the result can be <em>spoken</em> depends on
+        Kokoro having a voice for it — Turkish has none, so Italian → Turkish is subtitles only.</p>
+      <div class="card" style="margin-bottom:20px">
+        <div class="pair"><span>Spoken</span><select id="pick-src"></select></div>
+        <div class="pair"><span>Heard as</span><select id="pick-tgt"></select></div>
+        <div id="lang-note" class="banner blue" style="margin:0"></div>
+      </div>
+
+      <h3>Responsiveness</h3>
+      <p class="lede">How long the system waits in silence before deciding a sentence has ended.
+        The one term in the whole budget that is a setting rather than compute. Measured on this
+        speaker: 400 and 500 are identical; 300 feels fastest and splits sentences at breaths.
+        Applies at the next start.</p>
+      <div class="card" style="margin-bottom:20px">
+        <div class="pair" style="align-items:flex-start;margin-bottom:0"><span style="padding-top:10px">Commit wait</span>
+          <div style="flex:1"><select id="pick-tempo"></select><div class="note" id="tempo-note" style="margin-top:6px"></div></div></div>
+        <div class="pair" style="align-items:flex-start;margin:14px 0 0"><span style="padding-top:10px">Cloned voice speed</span>
+          <div style="flex:1"><select id="pick-vspeed"></select><div class="note" id="vspeed-note" style="margin-top:6px"></div></div></div>
+      </div>
+
+      <h3>Models</h3>
+      <p class="lede">The defaults were chosen by measurement on this voice and this GPU; the
+        alternatives are here with their measured cost, and the choice is yours. Only models
+        already on this machine are listed — the venue has no internet. Applies at the next start.</p>
+      <div class="card" style="margin-bottom:20px">
+        <div class="pair" style="align-items:flex-start"><span style="padding-top:10px">Recogniser</span>
+          <div style="flex:1"><select id="pick-asr"></select><div class="note" id="asr-cost" style="margin-top:6px"></div></div></div>
+        <div class="pair" style="align-items:flex-start;margin-bottom:0"><span style="padding-top:10px">Translator</span>
+          <div style="flex:1"><select id="pick-mt"></select><div class="note" id="mt-cost" style="margin-top:6px"></div></div></div>
+      </div>
+
+      <h3>Devices</h3>
+      <p class="lede">Pick them here so a wrong microphone is a choice rather than a surprise.
+        A change applies at the next start — swapping a device under a running stream gives you
+        a dead microphone with no error.</p>
+      <div class="card" style="margin-bottom:12px">
+        <div class="pair"><span>Microphone</span><select id="pick-in"></select></div>
+        <div class="pair"><span>Speakers</span><select id="pick-out"></select></div>
+        <div id="dev-live" class="banner amber" style="margin:0"></div>
+        <div class="note">Selected and live are shown separately. Between choosing a device and
+          pressing start they differ, and a substitution made quietly is right thirty seconds
+          before a talk and wrong to hide.</div>
+      </div>
+
+      <div class="two" style="margin-bottom:20px">
+        <div class="card">
+          <div class="eyebrow">VRAM, MEASURED CO-RESIDENT</div>
+          <div class="vbar" id="vram-bar"></div>
+          <div class="kv"><span>Peak</span><span class="v" id="vram-peak">—</span></div>
+          <div class="kv"><span>Headroom</span><span class="v" id="vram-head" style="color:var(--green)">—</span></div>
+          <div class="note">Desktop · Seed-VC service · ASR · MT · Kokoro · activations · one
+            conversion. Measured co-resident, never summed.</div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">OUTPUT LATENCY, MEASURED</div>
+          <div id="lat-table" style="font:400 13px/1.6 var(--mono)"></div>
+          <div class="note warn" id="lat-note"></div>
+        </div>
+      </div>
+
+      <h3>Everything the card reports</h3>
+      <p class="lede">Windows exposes the same hardware once per host API. The system default here
+        was an MME clone at 90 ms against 2 ms on WASAPI. WDM-KS is ranked last despite the best
+        latency on paper — on this machine all 12 WDM-KS outputs fail.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>device</th><th style="width:150px">host API</th><th style="width:90px">dir</th>
+            <th style="width:90px">latency</th><th style="width:210px"></th></tr></thead>
+          <tbody id="dev-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---- tabs -----------------------------------------------------------------
+// Every tab's section. A tab missing here is a blank page: the Studio shipped
+// that way, because show() hides every listed section and never shows it.
+const SECTIONS = ["live", "voices", "studio", "friulian", "ethics", "setup"];
+function show(name) {
+  SECTIONS.forEach((s) => { $(s).hidden = s !== name; });
+  document.querySelectorAll("nav .tab").forEach((b) =>
+    b.classList.toggle("on", b.dataset.t === name));
+  if (name === "voices") loadVoices();
+  if (name === "studio") loadStudio();
+  if (name === "friulian") loadFriulian();
+  if (name === "setup") { loadPreflight(); fillPickers(); loadMeasurements(); loadLanguages(); loadModels(); loadTempo(); loadVoiceSpeed(); }
+}
+document.querySelectorAll("nav .tab").forEach((b) =>
+  b.addEventListener("click", () => show(b.dataset.t)));
+
+// ---- the subtitle stack ---------------------------------------------------
+// Three committed sentences plus the provisional one. The newest is largest:
+// on a laptop screen the operator is glancing, not reading, and size is what
+// survives a glance.
+const KEEP = 3;
+let committed = [];
+let provisional = null;
+let showSource = false;
+
+function render() {
+  const rows = committed.slice(-KEEP);
+  let html = "";
+  rows.forEach((r, i) => {
+    const age = rows.length - 1 - i;           // 0 = newest committed
+    html += `<div class="said n${age}"><div class="t">${esc(r.translation)}</div>` +
+      (showSource && r.source ? `<div class="s">${esc(r.source)}</div>` : "") + "</div>";
+  });
+  if (provisional) {
+    html += `<div class="said prov"><div class="t">${esc(provisional.translation)}<span class="caret"></span></div>` +
+      (showSource && provisional.source ? `<div class="s">${esc(provisional.source)}</div>` : "") +
+      `<div class="provnote">provisional · revised in place · never spoken</div></div>`;
+  }
+  $("stack").innerHTML = html;
+}
+
+// ---- the five-stage bar ---------------------------------------------------
+const STAGES = [
+  ["commit wait", "commit_wait_s", "var(--s1)"],
+  ["recognition", "asr_s", "var(--s2)"],
+  ["translation", "translation_s", "var(--s3)"],
+  ["synthesis", "synthesis_s", "var(--s4)"],
+  ["voice conversion", "conversion_s", "var(--s5)"],
+];
+function renderBreakdown(ev) {
+  const values = STAGES.map(([, key]) => Math.max(0, Number(ev[key]) || 0));
+  const total = values.reduce((a, b) => a + b, 0);
+  $("last-head").textContent = `LAST SENTENCE · ${(ev.total_lag_s || total).toFixed(2)} s`;
+  if (!total) { $("bar").innerHTML = ""; $("legend").innerHTML = ""; return; }
+  $("bar").innerHTML = STAGES.map(([, , colour], i) =>
+    `<div style="width:${(values[i] / total * 100).toFixed(1)}%;background:${colour}"></div>`).join("");
+  $("legend").innerHTML = STAGES.map(([label, , colour], i) =>
+    `<div><i style="background:${colour}"></i><span>${label}</span><b>${values[i].toFixed(2)} s</b></div>`).join("");
+}
+
+// Whether the last spoken sentence actually went through the cloned voice.
+// The selected name alone says nothing: with the conversion service down,
+// every sentence is spoken generic and the card still read "phone-12s".
+function renderVoiceOutcome(ev) {
+  const note = $("s-voice-note");
+  if (!ev.spoken) { note.textContent = ""; return; }
+  if (ev.voice === "cloned") {
+    note.textContent = `✓ cloned · conversion ${Number(ev.conversion_s).toFixed(2)} s`;
+    note.style.color = "var(--green)";
+  } else if (/skipped/.test(ev.error || "")) {
+    // Not a failure: the service was fine, the queue was two sentences deep,
+    // and a sentence in the generic voice beats a sentence not said.
+    note.textContent = "⚠ spoken GENERIC — delivery behind, conversion skipped to keep up";
+    note.style.color = "var(--amber)";
+  } else {
+    note.textContent = /conversion/.test(ev.error || "")
+      ? "⚠ spoken GENERIC — conversion failed: " + ev.error.slice(0, 60)
+      : "⚠ spoken GENERIC — no conversion ran (service down or no voice selected)";
+    note.style.color = "var(--amber)";
+  }
+}
+
+function onDelivery(ev) {
+  if (ev.partial) { provisional = ev; }
+  else {
+    provisional = null;
+    committed.push(ev);
+    if (committed.length > 12) committed = committed.slice(-12);
+    renderBreakdown(ev);
+    renderVoiceOutcome(ev);
+  }
+  render();
+}
+
+let listeningPaused = false;
+function onState(st) {
+  if (!st) return;
+  $("dir").textContent = `${st.source_lang} → ${st.target_lang}`;
+  $("s-del").textContent = st.delivered;
+  $("s-par").textContent = st.partials;
+  const lag = st.last_lag_s ? `${st.last_lag_s.toFixed(2)} s` : "—";
+  $("s-lag").textContent = lag;
+  $("hdr-lag").textContent = lag;
+  $("s-voice").textContent = st.voice;
+  const cloned = st.voice && st.voice !== "generic";
+  $("hdr-voice").textContent = `voice: ${st.voice}`;
+  $("hdr-voice").className = "chip" + (cloned ? " voice-on" : "");
+  $("s-voice").style.color = cloned ? "var(--amber)" : "var(--ink)";
+
+  listeningPaused = !!st.paused;
+  $("pause-banner").hidden = !st.paused;
+  $("pause").textContent = st.paused ? "Resume listening" : "Pause listening";
+  $("pause").className = "btn" + (st.paused ? " on" : "");
+  $("mute-banner").hidden = !st.muted;
+  $("mute").textContent = st.muted ? "Unmute" : "Mute";
+  $("mute").className = "btn" + (st.muted ? " on" : "");
+
+  const warn = st.gate_warning || "";
+  $("gate-banner").hidden = !warn;
+  $("gate-banner-text").innerHTML = warn
+    ? `<strong>Output latency not measured.</strong> ${esc(warn)}` : "";
+  $("setup-dot").className = "dot" + (warn ? " show" : "");
+}
+
+// ---- the stream -----------------------------------------------------------
+const es = new EventSource("/events");
+// A dead server and a slow one look the same for a second; after five the
+// banner goes up, because a red dot the size of a pea was not enough - the
+// presenter sat in front of an empty page wondering what they had broken.
+let deadTimer = null;
+es.onopen = () => {
+  $("pulse").className = "live";
+  $("dead-banner").hidden = true;
+  clearTimeout(deadTimer); deadTimer = null;
+};
+es.onerror = () => {
+  $("pulse").className = "dead";
+  if (!deadTimer) deadTimer = setTimeout(() => { $("dead-banner").hidden = false; }, 5000);
+};
+es.onmessage = (e) => {
+  const m = JSON.parse(e.data);
+  if (m.kind === "delivery") { onDelivery(m.event); onState(m.state); }
+  else if (m.kind === "state") { onState(m.state); }
+  else if (m.kind === "pipeline") { onPipeline(m.pipeline); }
+};
+
+async function post(url, body) {
+  const r = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return r.json();
+}
+
+// ---- controls -------------------------------------------------------------
+const toggleMute = async () => onState(await post("/mute", {}));
+// For a video through the room's speakers, applause, a question: the gate
+// covers only the system's own voice.
+const togglePause = async () => onState(await post("/pause", {}));
+const dropVoice = async () => { onState(await post("/voice", { path: null })); loadVoices(); };
+const toggleSource = () => {
+  showSource = !showSource;
+  $("b-src").textContent = showSource ? "Hide Turkish" : "Show Turkish";
+  render();
+};
+$("mute").addEventListener("click", toggleMute);
+$("pause").addEventListener("click", togglePause);
+$("b-generic").addEventListener("click", dropVoice);
+$("v-generic").addEventListener("click", dropVoice);
+$("b-src").addEventListener("click", toggleSource);
+$("b-screen").addEventListener("click", () => window.open("/screen", "_blank"));
+// Three policies, one button that cycles them. The label says what the
+// pipeline is doing *now*, not what a click would do - on stage that is the
+// reading that matters.
+const STREAM_LABELS = {
+  off: "Wait for pause",
+  sentence: "Live: sentence ends",
+  chunk: "Live: chunks (buffer)",
+};
+const STREAM_TITLES = {
+  off: "Nothing is spoken until the speaker pauses. Safest for Turkish: the verb and the negation arrive last.",
+  sentence: "Each sentence is spoken as soon as two consecutive readings agree it has ended. Click for chunks.",
+  chunk: "Words are spoken in chunks of four as they settle, before the sentence ends. The translator sees clauses with no verb yet. Click to switch off.",
+};
+function renderStreaming(mode) {
+  const m = STREAM_LABELS[mode] ? mode : "off";
+  $("b-stream").textContent = STREAM_LABELS[m];
+  $("b-stream").title = STREAM_TITLES[m];
+  $("b-stream").className = "btn" + (m === "off" ? "" : m === "sentence" ? " primary" : " on");
+}
+$("b-stream").addEventListener("click", async () => {
+  const r = await post("/streaming", {});           // no body: cycle
+  if (r.error) { alert(r.error); return; }
+  renderStreaming(r.mode);
+});
+async function loadStreaming() {
+  try { renderStreaming((await (await fetch("/streaming")).json()).mode); } catch (_) {}
+}
+$("b-flush").addEventListener("click", async () => {
+  await post("/flush", {});
+  $("b-flush").textContent = "Flushed";
+  setTimeout(() => { $("b-flush").textContent = "Flush playback"; }, 1200);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select, textarea")) return;
+  const k = e.key.toLowerCase();
+  if (k === "m") toggleMute();
+  else if (k === "p") togglePause();
+  else if (k === "g") dropVoice();
+  else if (k === "s") toggleSource();
+  else if (k === "l") $("b-stream").click();
+});
+
+// ---- pipeline lifecycle ---------------------------------------------------
+let pipelineStatus = "unknown";
+let lastStatus = "unknown";
+function onPipeline(st) {
+  if (!st) return;
+  pipelineStatus = st.status;
+  const running = st.status === "running";
+  const busy = st.status === "starting" || st.status === "stopping";
+
+  $("running").hidden = !running;
+  $("idle").hidden = running;
+  if (running && pipelineStatus !== lastStatus) showLiveDevices();
+  lastStatus = pipelineStatus;
+  $("run").disabled = busy || st.status === "external";
+  $("run").textContent = running ? "Stop" : busy ? "…" : "Start";
+  $("run").className = "btn" + (running ? "" : " primary");
+  $("idle-start").disabled = busy;
+
+  const detail = $("idle-detail");
+  if (st.status === "stopped" || st.status === "external") {
+    $("idle-h").textContent = "Not running";
+    $("idle-p").textContent = st.status === "external"
+      ? "This run was started from the command line."
+      : "The microphone is closed. Nothing is being recognised.";
+    $("idle-start").hidden = st.status === "external";
+    detail.hidden = true;
+  } else if (busy) {
+    $("idle-h").textContent = st.status === "starting" ? "Starting" : "Stopping";
+    $("idle-p").textContent = "";
+    $("idle-start").hidden = true;
+    detail.hidden = false;
+    $("idle-status").textContent = `STATUS: ${st.status.toUpperCase()}`;
+    $("idle-status").style.color = "var(--dim)";
+    $("idle-title").textContent = st.status === "starting" ? "Starting" : "Stopping";
+    $("idle-title").style.color = "var(--ink)";
+    $("idle-body").textContent = st.detail || "";
+    $("idle-prog").hidden = false;
+    $("idle-cmd").hidden = true;
+    // Not a real percentage — nothing reports one. It moves so the page does
+    // not look frozen, and stops short of 100 so it never claims to be done.
+    const pct = /warming/.test(st.detail || "") ? 82 : 46;
+    $("idle-prog-bar").style.width = pct + "%";
+  } else if (st.status === "failed") {
+    $("idle-h").textContent = "Could not start";
+    $("idle-p").textContent = "";
+    $("idle-start").hidden = false;
+    detail.hidden = false;
+    $("idle-status").textContent = "STATUS: FAILED";
+    $("idle-status").style.color = "var(--red-ink)";
+    $("idle-title").textContent = "Could not start";
+    $("idle-title").style.color = "var(--red-ink)";
+    $("idle-body").textContent = st.detail || "";
+    $("idle-prog").hidden = true;
+    $("idle-cmd").hidden = false;
+    $("idle-cmd").textContent = "python scripts/check_env.py";
+  }
+}
+
+const runToggle = async () => {
+  const action = pipelineStatus === "running" ? "stop" : "start";
+  $("run").disabled = true;
+  onPipeline(await post(`/pipeline/${action}`, {}));
+};
+$("run").addEventListener("click", runToggle);
+$("idle-start").addEventListener("click", runToggle);
+
+async function pollPipeline() {
+  try { onPipeline(await (await fetch("/pipeline")).json()); } catch (_) {}
+}
+
+// ---- metrics (the gate, and the shape of the lag) -------------------------
+async function pollMetrics() {
+  let m;
+  try { m = await (await fetch("/metrics")).json(); } catch (_) { return; }
+  const g = m.gate;
+  if (g) {
+    // "held" is playback holding the gate shut until the audio ends; "closed"
+    // is the timed tail after it. Both mean the microphone is deaf right now.
+    const label = !g.enabled ? "disabled" : g.open ? "open" : g.held ? "held — speaking"
+      : `closed · ${Math.round(g.remaining_ms || 0)} ms`;
+    $("gate-pill").textContent = label;
+    $("gate-pill").className = "pill " + (!g.enabled ? "bad" : g.open ? "ok" : "warn");
+    $("g-closes").textContent = g.closes;
+    $("g-muted").textContent = `${(g.muted_seconds || 0).toFixed(1)} s`;
+    $("g-lost").textContent = `${g.speech_during_mute_blocks} blocks`;
+    $("g-lost").style.color = g.speech_during_mute_blocks ? "var(--amber)" : "var(--ink)";
+    $("g-tail").textContent = `${g.tail_ms} ms`;
+  }
+  const c = m.capture;
+  if (c) {
+    const now = c.recent_peak || 0;
+    // 0.02 is what the capture path counts as speech. Below that for a
+    // sustained stretch, whatever the microphone is pointed at, it is not a
+    // person talking into it.
+    const hearing = now >= 0.02;
+    $("m-now").textContent = now.toFixed(3);
+    $("m-now").style.color = hearing ? "var(--ink)" : "var(--amber)";
+    $("m-max").textContent = (c.peak_amplitude || 0).toFixed(3);
+    $("m-blocks").textContent = c.blocks_delivered;
+    $("mic-fill").style.width = Math.min(100, Math.sqrt(now) * 100).toFixed(0) + "%";
+    $("mic-fill").style.background = hearing ? "var(--green-dot)" : "var(--amber)";
+    $("mic-pill").textContent = listeningPaused ? "paused - not listening"
+      : hearing ? "hearing speech" : now >= 0.003 ? "room noise only" : "hearing nothing";
+    $("mic-pill").className = "pill " + (listeningPaused ? "bad" : hearing ? "ok" : "warn");
+  }
+  const t = m.transcriber;
+  if (t) $("m-segs").textContent = t.segments_detected;
+
+  const l = m.lag;
+  $("q-mean").textContent = l ? l.mean.toFixed(2) : "—";
+  $("q-p50").textContent = l ? l.p50.toFixed(2) : "—";
+  $("q-p95").textContent = l ? l.p95.toFixed(2) : "—";
+  // Partials land 1.68 s in whatever the segment does; it is a property of
+  // partial_interval_ms, not of this sentence, so it is not derived per run.
+  $("q-sub").textContent = "1.68";
+}
+
+// ---- voices ---------------------------------------------------------------
+function gatedCell(v) {
+  if (v.gated_fraction == null) return '<span style="color:var(--dim)">—</span>';
+  const pct = v.gated_fraction * 100;
+  const colour = pct >= 40 ? "var(--red-ink)" : pct >= 10 ? "var(--amber)" : "var(--green)";
+  const tail = pct >= 40 ? " — holes" : "";
+  return `<span style="color:${colour}">${pct.toFixed(pct < 10 ? 1 : 0)}%${tail}</span>`;
+}
+async function loadVoices() {
+  let list = [];
+  try { list = (await (await fetch("/voices")).json()).voices || []; } catch (_) {}
+  const best = list.filter((v) => v.gated_fraction != null)
+    .sort((a, b) => a.gated_fraction - b.gated_fraction)[0];
+  $("voice-rows").innerHTML = list.length ? list.map((v) => {
+    const tags = [];
+    if (v.configured) tags.push('<span class="pill info">configured</span>');
+    if (v.volunteer) tags.push('<span class="pill warn">volunteer</span>');
+    else if (best && v.name === best.name) tags.push('<span class="pill ok">recommended</span>');
+    // A recording with no consent record cannot be used - VoiceProfile
+    // refuses it - so the row asks for the signed form reference right here
+    // rather than sending an empty string and showing the refusal afterwards.
+    const consentCell = v.consent
+      ? `<span style="color:var(--dim);font-size:13px">${esc(v.consent)}</span>`
+      : `<input class="consent" placeholder="signed form ref — required to use"
+           style="height:32px;font-size:13px" data-for="${esc(v.path)}">`;
+    return `<tr class="${v.volunteer ? "volunteer" : ""}">
+      <td><span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${esc(v.name)} ${tags.join(" ")}</span></td>
+      <td>${consentCell}</td>
+      <td class="num">${gatedCell(v)}</td>
+      <td class="right"><button class="btn sm" data-voice="${esc(v.path)}"
+        data-consent="${esc(v.consent)}">use</button></td></tr>`;
+  }).join("") : '<tr><td colspan="4" style="color:var(--dim)">no reference recordings on disk</td></tr>';
+
+  $("voice-rows").querySelectorAll("button[data-voice]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      let consent = b.dataset.consent;
+      if (!consent) {
+        const field = $("voice-rows").querySelector(`input.consent[data-for="${CSS.escape(b.dataset.voice)}"]`);
+        consent = field ? field.value.trim() : "";
+        if (!consent) {
+          if (field) { field.focus(); field.style.borderColor = "var(--red)"; }
+          return;
+        }
+      }
+      const r = await post("/voice", { path: b.dataset.voice, consent });
+      if (r.error) { alert(r.error); return; }
+      onState(r);
+      b.textContent = "in use";
+      setTimeout(() => { b.textContent = "use"; }, 1500);
+    }));
+}
+$("v-forget").addEventListener("click", async () => {
+  if (!confirm("Delete every volunteer recording? The consent form promises this.")) return;
+  const r = await fetch("/voices", { method: "DELETE" });
+  const body = await r.json();
+  alert(`Deleted ${body.removed != null ? body.removed : 0} recording(s).`);
+  loadVoices();
+  pollPipeline();
+});
+$("cl-go").addEventListener("click", async () => {
+  const name = $("cl-name").value.trim();
+  const consent = $("cl-consent").value.trim();
+  if (!name || !consent) {
+    $("cl-status").textContent = "A name and a signed form reference are both required.";
+    $("cl-status").style.color = "var(--red-ink)";
+    return;
+  }
+  $("cl-go").disabled = true;
+  $("cl-status").style.color = "var(--dim)";
+  $("cl-status").textContent = `Recording ${$("cl-secs").value} s — speak now.`;
+  const r = await post("/voices/record",
+    { name, consent, seconds: Number($("cl-secs").value) });
+  $("cl-go").disabled = false;
+  if (r.error) {
+    $("cl-status").style.color = "var(--red-ink)";
+    $("cl-status").textContent = r.error;
+    return;
+  }
+  const pct = (r.gated_fraction || 0) * 100;
+  $("cl-status").style.color = pct >= 40 ? "var(--amber)" : "var(--green)";
+  $("cl-status").textContent =
+    `${(r.duration_s || 0).toFixed(1)} s captured, peak ${(r.peak || 0).toFixed(3)}, ` +
+    `${pct.toFixed(0)}% removed by the driver. Now speaking as ${r.name}.`;
+  loadVoices();
+});
+
+// ---- friulian -------------------------------------------------------------
+// One player for the whole tab, so a second click stops the first clip
+// rather than layering two voices in a room full of people.
+let playingButton = null;
+function playClip(url, button) {
+  const player = $("fur-player");
+  if (playingButton === button && !player.paused) { player.pause(); return; }
+  if (playingButton) playingButton.classList.remove("on");
+  playingButton = button;
+  button.classList.add("on");
+  player.src = url;
+  player.play().catch(() => {});
+}
+$("fur-player").addEventListener("ended", () => {
+  if (playingButton) playingButton.classList.remove("on");
+  playingButton = null;
+});
+$("fur-player").addEventListener("pause", () => {
+  if (playingButton) playingButton.classList.remove("on");
+  playingButton = null;
+});
+
+async function loadFriulian() {
+  let data = {};
+  try { data = await (await fetch("/friulian")).json(); } catch (_) {}
+  const rows = data.rows || [];
+  $("fur-rows").innerHTML = rows.length ? rows.map((r) => {
+    const file = String(r.n).padStart(2, "0") + ".wav";
+    return `<tr>
+    <td class="num" style="color:var(--dim)">${r.n}</td>
+    <td style="font-weight:600">${esc(r.friulian)}</td>
+    <td style="color:var(--dim)">${esc(r.italian)}</td>
+    <td>${r.correction ? esc(r.correction) : '<span class="dashline"></span>'}</td>
+    <td class="right"><button class="btn sm" data-clip="/friulian/audio/pipeline/${file}">▶</button></td></tr>`;
+  }).join("")
+    : '<tr><td colspan="5" style="color:var(--dim)">Nothing prepared yet — run scripts/prepare_friulian_demo.py</td></tr>';
+
+  const native = data.native;
+  $("fur-native").hidden = !native;
+  if (native) {
+    $("fur-native-h").textContent = `${native.speaker} — real Friulian`;
+    $("fur-native-lede").textContent =
+      `${native.clips.length} sentences from a native speaker, played exactly as recorded. ` +
+      "This is what the language sounds like; nothing on this page was made from his voice.";
+    $("fur-native-note").textContent = `${native.speaker} · ${native.source} · ${native.licence}. ${native.note}`;
+    $("fur-native-clips").innerHTML = native.clips.map((c) =>
+      `<button class="btn sm" data-clip="/friulian/audio/native/${esc(c.file)}"
+        title="${c.start_s}s – ${c.end_s}s">▶ ${c.n} <span style="color:var(--dim)">${c.duration_s.toFixed(0)}s</span></button>`).join("");
+  }
+  document.querySelectorAll("#friulian button[data-clip]").forEach((b) =>
+    b.addEventListener("click", () => playClip(b.dataset.clip, b)));
+  $("fur-mic-warn").hidden = pipelineStatus !== "running";
+}
+
+// ---- preflight, devices, measurements -------------------------------------
+async function loadPreflight() {
+  let rows = [];
+  try { rows = (await (await fetch("/preflight")).json()).checks || []; } catch (_) {}
+  $("preflight").innerHTML = rows.map((c) => `<div class="check">
+    <span class="led ${c.level === "ok" ? "ok" : c.level === "warn" ? "warn" : "fail"}"></span>
+    <div><div class="t">${esc(c.title)}</div><div class="d">${esc(c.detail)}</div>
+    ${c.action ? `<div class="cmd">${esc(c.action)}</div>` : ""}</div></div>`).join("");
+}
+
+// describe_devices() reports the two directions separately, because one entry
+// can be both. `latency` therefore depends on which way round we are asking.
+const lat = (d, dir) =>
+  Math.round(dir === "input" ? d.low_in_latency_ms : d.low_out_latency_ms);
+
+let deviceList = null;
+async function fillPickers() {
+  if (!deviceList) {
+    try { deviceList = await (await fetch("/devices")).json(); } catch (_) { return; }
+  }
+  // WDM-KS entries go last and cannot be picked: on this laptop every one of
+  // them refuses to open (-9996 at rehearsal), and their "10 ms" made the jack
+  // microphone's WDM-KS entry look like the best choice when it never works.
+  const fill = (el, items, dir) => {
+    const kernel = (d) => d.hostapi === "Windows WDM-KS";
+    const isDefault = (d) => dir === "input" ? d.default_input : d.default_output;
+    // The value is "name@host API", not the index: Windows renumbers devices
+    // whenever one connects, and at rehearsal index 26 went from the jack
+    // microphone to a "PC Speaker" loopback within minutes. A choice kept as a
+    // number can come back as another device - possibly one that listens to the
+    // speakers. A name means the same device or none.
+    const key = (d) => `${d.name}@${d.hostapi}`;
+    // Speakers on MME or DirectSound starve while the pipeline works (45 gaps in
+    // 8 s measured, the choppy translation at rehearsal): offered after WASAPI,
+    // and saying so.
+    const stutters = (d) => dir === "output" && (d.hostapi === "MME" || d.hostapi === "Windows DirectSound");
+    const rank = (d) => kernel(d) ? 3 : d.hostapi === "Windows WASAPI" ? 0 : stutters(d) ? 2 : 1;
+    const opt = (d) => kernel(d)
+        ? `<option value="${esc(key(d))}" disabled>${esc(d.name)} — WDM-KS — does not open on this laptop</option>`
+        : `<option value="${esc(key(d))}">${esc(d.name)} — ${esc(d.hostapi)} — ${lat(d, dir)} ms${isDefault(d) ? " · Windows default" : ""}${stutters(d) ? " — may stutter while translating" : ""}</option>`;
+    el.innerHTML = '<option value="">system default</option>'
+      + [...items].sort((a, b) => rank(a) - rank(b)).map(opt).join("");
+  };
+  fill($("pick-in"), deviceList.input || [], "input");
+  fill($("pick-out"), deviceList.output || [], "output");
+
+  const all = [...(deviceList.input || []).map((d) => ({ ...d, dir: "input" })),
+               ...(deviceList.output || []).map((d) => ({ ...d, dir: "output" }))];
+  $("dev-rows").innerHTML = all.map((d) => {
+    let tag = "";
+    if (/stereo mix|what u hear|pc speaker|loopback/i.test(d.name))
+      tag = '<span class="pill bad">loopback — never auto-selected</span>';
+    else if (d.likely_bluetooth)
+      tag = '<span class="pill warn">bluetooth — 16 kHz mono over HFP</span>';
+    else if (d.hostapi === "Windows WDM-KS")
+      tag = '<span class="pill mute">last resort — fails on this machine</span>';
+    else if (d.dir === "input" ? d.default_input : d.default_output)
+      tag = '<span class="pill mute">system default</span>';
+    return `<tr><td>${esc(d.name)}</td><td class="num" style="color:var(--dim)">${esc(d.hostapi)}</td>
+      <td class="num" style="color:var(--dim)">${d.dir}</td>
+      <td class="num">${lat(d, d.dir)} ms</td><td>${tag}</td></tr>`;
+  }).join("");
+  await showLiveDevices();
+}
+async function showLiveDevices() {
+  let r;
+  try { r = await (await fetch("/devices")).json(); } catch (_) { return; }
+  const el = $("dev-live");
+  if (!r.live) { el.textContent = "Devices come from the config for this run."; return; }
+  const sub = r.substituted || {};
+  const part = (dir) => r.live[dir]
+    ? `${dir}: ${r.live[dir]}${sub[dir] ? " ⚠ not the one you picked — it would not open" : ""}`
+    : `${dir}: nothing open yet`;
+  el.textContent = `${part("input")} · ${part("output")} · changes apply ${r.applies}`;
+  if (r.live.input) $("mic-device").textContent = r.live.input;
+  el.className = "banner " + ((sub.input || sub.output) ? "amber" : "blue");
+  el.style.margin = "0";
+  if (r.selected) {
+    if (r.selected.input != null) $("pick-in").value = r.selected.input;
+    if (r.selected.output != null) $("pick-out").value = r.selected.output;
+  }
+}
+const pick = async (dir, el) => {
+  const value = el.value === "" ? null : el.value;
+  await post("/devices", { [dir]: value });
+  showLiveDevices();
+};
+$("pick-in").addEventListener("change", (e) => pick("input", e.target));
+$("pick-out").addEventListener("change", (e) => pick("output", e.target));
+
+// ---- languages ------------------------------------------------------------
+let langInfo = null;
+async function loadLanguages() {
+  try { langInfo = await (await fetch("/languages")).json(); } catch (_) { return; }
+  const src = $("pick-src"), tgt = $("pick-tgt");
+  src.innerHTML = langInfo.sources.map((c) =>
+    `<option value="${c}">${esc(langInfo.names[c] || c)}</option>`).join("");
+  tgt.innerHTML = langInfo.targets.map((t) =>
+    `<option value="${t.code}">${esc(t.name)}${t.voice ? "" : " — subtitles only"}</option>`).join("");
+  src.value = langInfo.selected.source || langInfo.current.source;
+  tgt.value = langInfo.selected.target || langInfo.current.target;
+  renderLangNote();
+}
+function renderLangNote() {
+  if (!langInfo) return;
+  const t = langInfo.targets.find((x) => x.code === $("pick-tgt").value) || {};
+  const running = `running now: ${langInfo.current.source} → ${langInfo.current.target}`;
+  const chosen = `${$("pick-src").value} → ${$("pick-tgt").value}`;
+  let text = `${running} · chosen: ${chosen} · applies ${langInfo.applies}`;
+  if (t.note) text += ` · ${t.note}`;
+  $("lang-note").textContent = text;
+  $("lang-note").className = "banner " + (t.voice === false ? "amber" : "blue");
+  $("lang-note").style.margin = "0";
+}
+const pickLang = async () => {
+  const r = await post("/languages", { source: $("pick-src").value, target: $("pick-tgt").value });
+  if (r.error) { alert(r.error); return; }
+  langInfo = r;
+  renderLangNote();
+};
+$("pick-src").addEventListener("change", pickLang);
+$("pick-tgt").addEventListener("change", pickLang);
+
+// ---- studio ---------------------------------------------------------------
+// Everything OmniVoice does, driven from here. The server refuses any voice
+// without a consent record; the page only offers what it lists.
+const ST_EXAMPLES = [
+  ["it", "Nonna, sono io. Ho avuto un incidente, mi servono soldi subito. Non dirlo a nessuno."],
+  ["it", "Buongiorno, sono il direttore della sua banca. Mi serve il codice che ha appena ricevuto."],
+  ["it", "[laughter] Ma dai, non ci credo! [sigh] Va bene, ti richiamo dopo."],
+  ["it", "Questa voce non è la mia. Riattaccate e richiamate il numero che conoscete."],
+  ["tr", "Anneanne, benim. Kaza geçirdim, hemen paraya ihtiyacım var."],
+  ["en", "Grandma, it's me. I'm in trouble and I need money right now."],
+];
+const ST_KEY = "studio-settings";
+let studio = null;
+
+function stRemember() {
+  try { localStorage.setItem(ST_KEY, JSON.stringify(stOptions(true))); } catch (_) {}
+}
+function stRecall() {
+  try { return JSON.parse(localStorage.getItem(ST_KEY) || "{}") || {}; } catch (_) { return {}; }
+}
+function voiceLabel(v) {
+  return v.designed ? `${v.name} · invented` : v.derived_from ? `${v.name} · derived from ${v.derived_from}`
+    : v.volunteer ? `${v.name} · volunteer` : `${v.name}${v.configured ? " · yours" : ""}`;
+}
+function stVoice() {
+  const path = $("st-voice").value;
+  return (studio && studio.voices || []).find((v) => v.path === path) || null;
+}
+
+// -- settings: sliders built from the server's table ------------------------
+function buildSettings() {
+  const saved = stRecall();
+  $("st-sliders").innerHTML = Object.entries(studio.advanced).map(([k, a]) => {
+    const auto = a.default === null;
+    const v = saved[k] !== undefined && saved[k] !== null ? saved[k] : (auto ? (a.min + a.max) / 2 : a.default);
+    const on = auto ? saved[k] !== undefined && saved[k] !== null : true;
+    return `<div class="sl" data-k="${k}"><div class="top"><label for="sl-${k}">${esc(a.label)}</label>
+      <span class="val" id="sv-${k}"></span></div>
+      <input type="range" id="sl-${k}" min="${a.min}" max="${a.max}" step="${a.step}" value="${v}" ${on ? "" : "disabled"}>
+      ${auto ? `<label class="check"><input type="checkbox" id="sa-${k}" ${on ? "" : "checked"}> auto</label>` : ""}
+      <span class="help">${esc(a.help)}</span></div>`;
+  }).join("");
+  $("st-flags").innerHTML = Object.entries(studio.flags).map(([k, f]) =>
+    `<label class="check" title="${esc(f.help)}"><input type="checkbox" id="sf-${k}"
+      ${(saved[k] !== undefined ? saved[k] : f.default) ? "checked" : ""}> ${esc(f.label)}</label>`).join("");
+  if (saved.seed !== undefined && saved.seed !== null) $("st-seed").value = saved.seed;
+  Object.keys(studio.advanced).forEach((k) => {
+    const r = $(`sl-${k}`), box = $(`sa-${k}`);
+    const paint = () => { $(`sv-${k}`).textContent = r.disabled ? "auto" : r.value; };
+    r.addEventListener("input", () => { paint(); stRemember(); });
+    if (box) box.addEventListener("change", () => { r.disabled = box.checked; paint(); stRemember(); });
+    paint();
+  });
+  Object.keys(studio.flags).forEach((k) => $(`sf-${k}`).addEventListener("change", stRemember));
+  $("st-seed").addEventListener("change", stRemember);
+}
+function stOptions(withSeed) {
+  const out = {};
+  if (!studio) return out;
+  Object.keys(studio.advanced).forEach((k) => {
+    const r = $(`sl-${k}`); if (r && !r.disabled) out[k] = Number(r.value);
+  });
+  Object.keys(studio.flags).forEach((k) => { const c = $(`sf-${k}`); if (c) out[k] = c.checked; });
+  if (withSeed) out.seed = $("st-seed").value.trim() === "" ? null : Number($("st-seed").value);
+  return out;
+}
+function applySettings(opts, seed) {
+  Object.entries(studio.advanced).forEach(([k, a]) => {
+    const r = $(`sl-${k}`), box = $(`sa-${k}`), has = opts && opts[k] !== undefined && opts[k] !== null;
+    if (box) { box.checked = !has; r.disabled = !has; }
+    r.value = has ? opts[k] : (a.default === null ? r.value : a.default);
+    $(`sv-${k}`).textContent = r.disabled ? "auto" : r.value;
+  });
+  Object.entries(studio.flags).forEach(([k, f]) => {
+    $(`sf-${k}`).checked = opts && opts[k] !== undefined ? !!opts[k] : f.default;
+  });
+  $("st-seed").value = seed === undefined || seed === null ? "" : seed;
+  stRemember();
+}
+
+// -- voice and its transcript -----------------------------------------------
+async function showVoice() {
+  const v = stVoice(), auto = $("st-voice").value === (studio && studio.auto_voice);
+  $("st-voice-meta").textContent = auto
+    ? "The model picks a voice that belongs to no one. The seed decides which; keep a seed to keep the voice."
+    : v ? (v.designed ? `Invented (${v.design}). ${v.consent}` : `Consent: ${v.consent}`) : "";
+  $("st-tr-box").hidden = !v;
+  $("st-del-voice").hidden = !(v && (v.volunteer || v.designed));
+  $("st-redesign-box").hidden = !(v && v.designed);
+  if (!(v && v.designed)) $("st-redesign").checked = false;
+  $("st-tr").value = ""; $("st-tr-status").textContent = "";
+  if (!v) return;
+  try {
+    const r = await (await fetch(`/studio/transcript?voice=${encodeURIComponent(v.path)}`)).json();
+    const t = r.transcript;
+    $("st-tr").value = t ? t.text : "";
+    $("st-tr-status").textContent = t ? `${(t.seconds - (t.start || 0)).toFixed(1)} s used${t.edited ? " · corrected by hand" : ""}`
+      : "not prepared yet - the first sentence in this voice will take 20-30 s, or prepare it now";
+  } catch (_) {}
+}
+$("st-voice").addEventListener("change", showVoice);
+$("st-del-voice").addEventListener("click", async () => {
+  const v = stVoice(); if (!v) return;
+  if (!confirm(`Delete "${v.name}" and every clip made from it? This cannot be undone.`)) return;
+  const r = await post("/studio/voice/delete", { voice: v.path });
+  newStatus(r.error ? r.error : `Deleted "${r.deleted}".`, !!r.error);
+  $("st-voice").value = ""; await loadStudio(); await showVoice();
+});
+// invent: from attributes, or from a recording
+document.querySelectorAll('#studio [data-mode]').forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll('#studio [data-mode]').forEach((x) => x.classList.toggle("on", x === b));
+  document.querySelectorAll('#studio [data-mode-pane]').forEach((p) => { p.hidden = p.dataset.modePane !== b.dataset.mode; });
+}));
+const dvPaint = () => { $("dv-semi-v").textContent = (Number($("dv-semi").value) > 0 ? "+" : "") + $("dv-semi").value;
+  $("dv-tempo-v").textContent = $("dv-tempo").value; $("dv-upload").hidden = $("dv-source").value !== "__upload__"; };
+["dv-semi", "dv-tempo"].forEach((id) => $(id).addEventListener("input", dvPaint));
+$("dv-source").addEventListener("change", dvPaint);
+$("dv-go").addEventListener("click", async () => {
+  let source = $("dv-source").value;
+  const name = $("dv-name").value.trim();
+  if (!name) { newStatus("Give the new voice a name.", true); return; }
+  $("dv-go").disabled = true;
+  try {
+    if (source === "__upload__") {
+      const file = $("dv-file").files[0], whose = $("dv-whose").value.trim(), consent = $("dv-consent").value.trim();
+      if (!file) { newStatus("Choose a recording first.", true); return; }
+      if (!whose || !consent) { newStatus("Whose voice it is and a signed form reference are required.", true); return; }
+      newStatus("reading the file…");
+      const up = await post("/studio/upload", { name: whose, consent, data: await fileToWav64(file), filename: file.name });
+      if (up.error) { newStatus(up.error, true); return; }
+      source = up.path;
+    }
+    newStatus("deriving…");
+    const r = await post("/studio/derive", { name, source, semitones: Number($("dv-semi").value), tempo: Number($("dv-tempo").value) });
+    if (r.error) { newStatus(r.error, true); return; }
+    newStatus(`"${r.name}" is ready (${r.semitones > 0 ? "+" : ""}${r.semitones} semitones, tempo ${r.tempo}). Selected above.`);
+    await afterNewVoice(r.path);
+  } catch (e) { newStatus(String(e.message || e), true); }
+  finally { $("dv-go").disabled = false; }
+});
+$("st-prep").addEventListener("click", async () => {
+  const v = stVoice(); if (!v) return;
+  $("st-prep").disabled = true; $("st-tr-status").textContent = "listening to the recording… (20-30 s the first time)";
+  const r = await post("/studio/prepare", { voice: v.path });
+  $("st-prep").disabled = false;
+  if (r.error) { $("st-tr-status").textContent = r.error; return; }
+  $("st-tr").value = r.text; $("st-tr-status").textContent = `ready · ${(r.seconds - (r.start || 0)).toFixed(1)} s used`;
+});
+$("st-tr-save").addEventListener("click", async () => {
+  const v = stVoice(); if (!v) return;
+  const r = await post("/studio/transcript", { voice: v.path, text: $("st-tr").value });
+  $("st-tr-status").textContent = r.error ? r.error : "saved - the voice is rebuilt from it on the next sentence";
+});
+
+// -- new voices ---------------------------------------------------------------
+document.querySelectorAll("#studio .subtabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("#studio .subtabs button").forEach((x) => x.classList.toggle("on", x === b));
+  document.querySelectorAll("#studio [data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== b.dataset.sub; });
+}));
+function newStatus(text, bad) { $("st-new-status").textContent = text; $("st-new-status").style.color = bad ? "var(--red)" : ""; }
+async function afterNewVoice(path) {
+  await loadStudio();
+  if (path && [...$("st-voice").options].some((o) => o.value === path)) { $("st-voice").value = path; await showVoice(); }
+}
+$("rc-go").addEventListener("click", async () => {
+  const name = $("rc-name").value.trim(), consent = $("rc-consent").value.trim(), secs = Number($("rc-secs").value);
+  if (!name || !consent) { newStatus("A name and a signed form reference are required before recording anyone.", true); return; }
+  $("rc-go").disabled = true;
+  let left = secs; newStatus(`Recording - speak now (${left} s)`);
+  const tick = setInterval(() => { left -= 1; if (left > 0) newStatus(`Recording - speak now (${left} s)`); else newStatus("building the reference…"); }, 1000);
+  const r = await post("/voices/record", { name, consent, seconds: secs, use: false });
+  clearInterval(tick); $("rc-go").disabled = false;
+  if (r.error) { newStatus(r.error, true); return; }
+  newStatus(`Recorded "${r.name || name}". Selected above - press "Prepare now" to check what it heard.`);
+  await afterNewVoice(r.path);
+});
+async function fileToWav64(file) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  let audio;
+  try { audio = await ctx.decodeAudioData(await file.arrayBuffer()); } finally { ctx.close(); }
+  const rate = audio.sampleRate, len = Math.min(audio.length, Math.floor(60 * rate));
+  const mono = new Float32Array(len);
+  for (let c = 0; c < audio.numberOfChannels; c++) {
+    const d = audio.getChannelData(c);
+    for (let i = 0; i < len; i++) mono[i] += d[i] / audio.numberOfChannels;
+  }
+  const buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf);
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + len * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, len * 2, true);
+  for (let i = 0; i < len; i++) { const x = Math.max(-1, Math.min(1, mono[i])); v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true); }
+  const u8 = new Uint8Array(buf); let bin = "";
+  for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+$("up-go").addEventListener("click", async () => {
+  const file = $("up-file").files[0], name = $("up-name").value.trim(), consent = $("up-consent").value.trim();
+  if (!file) { newStatus("Choose a recording first.", true); return; }
+  if (!name || !consent) { newStatus("A name and a signed form reference are required before keeping anyone's voice.", true); return; }
+  $("up-go").disabled = true; newStatus("reading the file…");
+  try {
+    const data = await fileToWav64(file);
+    newStatus("uploading…");
+    const r = await post("/studio/upload", { name, consent, data, filename: file.name });
+    if (r.error) newStatus(r.error, true);
+    else { newStatus(`Kept "${r.name}" (${r.seconds} s). Selected above - press "Prepare now" to check what it heard.`); await afterNewVoice(r.path); }
+  } catch (e) { newStatus(`The browser could not read that file: ${e.message || e}`, true); }
+  $("up-go").disabled = false;
+});
+$("dz-go").addEventListener("click", async () => {
+  const body = { name: $("dz-name").value, gender: $("dz-gender").value, age: $("dz-age").value,
+                 pitch: $("dz-pitch").value, accent: $("dz-accent").value, whisper: $("dz-whisper").checked,
+                 seed: $("dz-seed").value.trim() === "" ? null : Number($("dz-seed").value) };
+  $("dz-go").disabled = true; newStatus("inventing…");
+  const r = await post("/studio/design", body);
+  $("dz-go").disabled = false;
+  if (r.error) { newStatus(r.error, true); return; }
+  newStatus(`"${r.name}" is ready (${r.design}, seed ${r.seed}). Selected above; also in the Voices tab.`);
+  await afterNewVoice(r.path);
+});
+
+// -- text ---------------------------------------------------------------------
+function insertAtCursor(el, text) {
+  const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? el.value.length;
+  const pad = a > 0 && !/\s$/.test(el.value.slice(0, a)) ? " " : "";
+  el.value = el.value.slice(0, a) + pad + text + " " + el.value.slice(b);
+  el.focus(); el.selectionStart = el.selectionEnd = a + pad.length + text.length + 1;
+}
+
+// -- render -------------------------------------------------------------------
+function renderStudio() {
+  if (!studio) return;
+  const s = studio.service || {};
+  $("st-down").hidden = !!s.up;
+  $("st-down-text").innerHTML = s.up ? "" : `OmniVoice is not running on port ${esc(s.port)}. Start it in a terminal:
+    <span class="mono">C:\\Users\\you\\venvs\\omnivoice\\Scripts\\python.exe scripts\\omnivoice_server.py</span>`;
+  ["st-go", "dz-go", "st-prep"].forEach((id) => { $(id).disabled = !s.up; });
+  // Sliders come from the running application. An application older than this
+  // page sends none - say so rather than show an empty panel.
+  if (!studio.advanced) {
+    $("st-down").hidden = false;
+    $("st-down-text").innerHTML = "The application is older than this page. Close it (Ctrl+C in its terminal) and start it again: "
+      + '<span class="mono">python scripts\\live_translate.py --ui</span>';
+    return;
+  }
+  $("st-live-note").hidden = !studio.pipeline_running;
+
+  const keep = $("st-voice").value;
+  const groups = [["Yours", (v) => !v.volunteer && !v.designed], ["Volunteers", (v) => v.volunteer],
+                  ["Invented", (v) => v.designed]];
+  $("st-voice").innerHTML = groups.map(([label, test]) => {
+    const list = (studio.voices || []).filter(test);
+    return list.length ? `<optgroup label="${label}">${list.map((v) =>
+      `<option value="${esc(v.path)}">${esc(voiceLabel(v))}</option>`).join("")}</optgroup>` : "";
+  }).join("") + `<optgroup label="No one's voice"><option value="${esc(studio.auto_voice)}">the model picks a voice (auto)</option></optgroup>`;
+  if ([...$("st-voice").options].some((o) => o.value === keep)) $("st-voice").value = keep;
+
+  const lang = $("st-lang").value || "it";
+  const common = Object.entries(studio.languages || {});
+  const all = (studio.all_languages || []).filter(([code]) => !(code in (studio.languages || {})));
+  $("st-lang").innerHTML = `<optgroup label="Common">${common.map(([k, n]) =>
+      `<option value="${esc(k)}">${esc(n)}</option>`).join("")}</optgroup>`
+    + (all.length ? `<optgroup label="All ${all.length + common.length - 1} OmniVoice languages">${all.map(([k, n]) =>
+      `<option value="${esc(k)}">${esc(n)} (${esc(k)})</option>`).join("")}</optgroup>` : "");
+  $("st-lang").value = lang;
+
+  for (const key of ["gender", "age", "pitch", "accent"]) {
+    const id = `dz-${key}`, cur = $(id).value;
+    $(id).innerHTML = ((studio.design || {})[key] || []).map((o) =>
+      `<option value="${esc(o)}">${esc(o || "none")}</option>`).join("");
+    if (cur) $(id).value = cur;
+    else if (key === "age") $(id).value = "elderly";
+  }
+  if (!$("st-sliders").children.length) buildSettings();
+
+  const src = $("dv-source").value;
+  $("dv-source").innerHTML = (studio.voices || []).map((v) =>
+    `<option value="${esc(v.path)}">${esc(voiceLabel(v))}</option>`).join("")
+    + '<option value="__upload__">upload a new recording…</option>';
+  if ([...$("dv-source").options].some((o) => o.value === src)) $("dv-source").value = src;
+  dvPaint();
+
+  const clips = studio.clips || [];
+  $("st-clips").innerHTML = clips.length ? clips.map((c) => {
+    const o = c.options || {};
+    const set = [o.num_step ? `${o.num_step} steps` : "", o.speed ? `speed ${o.speed}` : "",
+                 c.seed !== undefined && c.seed !== null ? `seed ${c.seed}` : ""].filter(Boolean).join(" · ");
+    return `<tr class="${c.volunteer ? "volunteer" : ""}">
+      <td>${esc(c.text)}</td><td>${esc(c.voice)}</td><td>${esc(c.language)}</td>
+      <td style="font-size:12px;color:var(--dim)">${esc(set)}<br>${Number(c.seconds).toFixed(1)} s in ${Number(c.compute_s || 0).toFixed(1)} s</td>
+      <td><audio controls preload="none" src="/studio/clip/${esc(c.id)}"></audio></td>
+      <td class="right"><button class="btn sm" data-play="${esc(c.id)}">Play</button>
+        <button class="btn sm" data-reuse="${esc(c.id)}" title="Same text, voice, settings and seed">Reuse</button>
+        <button class="btn sm" data-del="${esc(c.id)}">Delete</button></td></tr>`;
+  }).join("") : '<tr><td colspan="6" style="color:var(--dim)">no clips yet</td></tr>';
+  $("st-clips").querySelectorAll("button[data-play]").forEach((b) => b.addEventListener("click", async () => {
+    b.disabled = true;
+    try { await post(`/studio/play/${encodeURIComponent(b.dataset.play)}`); } finally { b.disabled = false; }
+  }));
+  $("st-clips").querySelectorAll("button[data-reuse]").forEach((b) => b.addEventListener("click", async () => {
+    const c = clips.find((x) => x.id === b.dataset.reuse); if (!c) return;
+    $("st-text").value = c.text; $("st-lang").value = c.language;
+    if (c.voice_path && [...$("st-voice").options].some((o) => o.value === c.voice_path)) $("st-voice").value = c.voice_path;
+    applySettings(c.options || {}, c.seed);
+    $("st-adv").open = true; await showVoice();
+    $("st-status").textContent = `settings of "${c.text.slice(0, 30)}…" loaded`;
+  }));
+  $("st-clips").querySelectorAll("button[data-del]").forEach((b) => b.addEventListener("click", async () => {
+    await fetch(`/studio/clip/${encodeURIComponent(b.dataset.del)}`, { method: "DELETE" });
+    loadStudio();
+  }));
+}
+async function loadStudio() {
+  try { studio = await (await fetch("/studio")).json(); } catch (_) { return; }
+  const first = !$("st-nv").children.length;
+  renderStudio();
+  if (first) {
+    $("st-nv").innerHTML = Object.entries(studio.nonverbal || {}).map(([tag, what]) =>
+      `<button type="button" class="chip" data-tag="${esc(tag)}" title="${esc(what)}">[${esc(tag)}]</button>`).join("");
+    $("st-nv").querySelectorAll("[data-tag]").forEach((b) =>
+      b.addEventListener("click", () => insertAtCursor($("st-text"), `[${b.dataset.tag}]`)));
+    await showVoice();
+  }
+}
+$("st-examples").innerHTML = ST_EXAMPLES.map(([l, t], i) =>
+  `<button type="button" class="chip" data-ex="${i}">${esc(l)} · ${esc(t.length > 42 ? t.slice(0, 40) + "…" : t)}</button>`).join("");
+$("st-examples").querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click", () => {
+  const [l, t] = ST_EXAMPLES[Number(b.dataset.ex)];
+  $("st-text").value = t; $("st-lang").value = l;
+}));
+$("st-reset").addEventListener("click", () => applySettings({}, null));
+$("st-go").addEventListener("click", async () => {
+  const opts = stOptions(true), seed = opts.seed; delete opts.seed;
+  const texts = $("st-lines").checked
+    ? $("st-text").value.split("\n").map((t) => t.trim()).filter(Boolean) : [$("st-text").value];
+  $("st-go").disabled = true;
+  const t0 = performance.now();
+  let done = 0, last = null;
+  for (const text of texts) {
+    $("st-status").textContent = texts.length > 1 ? `speaking ${done + 1} of ${texts.length}…` : "speaking…";
+    $("st-status").style.color = "var(--dim)";
+    const r = await post("/studio/speak", { text, language: $("st-lang").value, voice: $("st-voice").value,
+      options: opts, seed, play: $("st-play").checked, redesign: $("st-redesign").checked });
+    if (r.error) { $("st-status").textContent = r.error; $("st-status").style.color = "var(--red)"; break; }
+    done += 1; last = r;
+    if (texts.length > 1) await loadStudio();
+  }
+  if (last) $("st-status").textContent = (texts.length > 1 ? `${done} clips` : `${Number(last.seconds).toFixed(1)} s of speech`)
+    + ` in ${((performance.now() - t0) / 1000).toFixed(1)} s · seed ${last.seed}` + (last.played ? ` · playing (${last.played})` : "");
+  $("st-go").disabled = !(studio && studio.service && studio.service.up);
+  loadStudio();
+});
+
+// ---- cloned voice speed (OmniVoice) ------------------------------------------
+let vspeedInfo = null;
+function renderVoiceSpeed() {
+  if (!vspeedInfo) return;
+  const v = Number($("pick-vspeed").value);
+  const opt = vspeedInfo.options.find((o) => o.speed === v) || {};
+  $("vspeed-note").textContent = `${opt.note || ""} · applies ${vspeedInfo.applies} · ${vspeedInfo.only}`;
+}
+async function loadVoiceSpeed() {
+  try { vspeedInfo = await (await fetch("/voice_speed")).json(); } catch (_) { return; }
+  $("pick-vspeed").innerHTML = vspeedInfo.options.map((o) =>
+    `<option value="${o.speed}">${o.speed ? o.speed + "×" : "as the reference"}${o.speed === vspeedInfo.configured ? " (config)" : ""}</option>`).join("");
+  const cur = vspeedInfo.selected !== null && vspeedInfo.selected !== undefined ? vspeedInfo.selected
+    : (vspeedInfo.configured || 0);
+  $("pick-vspeed").value = String(cur);
+  renderVoiceSpeed();
+}
+$("pick-vspeed").addEventListener("change", async () => {
+  const r = await post("/voice_speed", { speed: Number($("pick-vspeed").value) });
+  if (r.error) { alert(r.error); return; }
+  vspeedInfo = r; renderVoiceSpeed();
+});
+
+// ---- tempo ----------------------------------------------------------------
+let tempoInfo = null;
+function renderTempo() {
+  if (!tempoInfo) return;
+  const ms = Number($("pick-tempo").value);
+  const opt = tempoInfo.options.find((o) => o.ms === ms) || {};
+  $("tempo-note").textContent = `${opt.note || ""} · applies ${tempoInfo.applies}`;
+  $("tempo-note").className = "note" + (opt.level === "warn" ? " warn" : "");
+}
+async function loadTempo() {
+  try { tempoInfo = await (await fetch("/tempo")).json(); } catch (_) { return; }
+  $("pick-tempo").innerHTML = tempoInfo.options.map((o) =>
+    `<option value="${o.ms}">${o.ms} ms${o.ms === tempoInfo.configured ? " (config)" : ""}</option>`).join("");
+  $("pick-tempo").value = String(tempoInfo.selected || tempoInfo.configured || 500);
+  renderTempo();
+}
+$("pick-tempo").addEventListener("change", async () => {
+  const r = await post("/tempo", { min_silence_ms: Number($("pick-tempo").value) });
+  if (r.error) { alert(r.error); return; }
+  tempoInfo = r;
+  renderTempo();
+});
+
+// ---- models ---------------------------------------------------------------
+let modelInfo = null;
+function renderModelCost() {
+  if (!modelInfo) return;
+  for (const kind of ["asr", "mt"]) {
+    const sel = $(kind === "asr" ? "pick-asr" : "pick-mt");
+    const opt = modelInfo[kind].find((o) => o.id === sel.value) || {};
+    const el = $(kind === "asr" ? "asr-cost" : "mt-cost");
+    el.textContent = (opt.cost || "") + (opt.adr ? ` · ${opt.adr}` : "");
+    el.className = "note" + (/NOT beside|does NOT fit|worse/.test(opt.cost || "") ? " warn" : "");
+  }
+}
+async function loadModels() {
+  try { modelInfo = await (await fetch("/models")).json(); } catch (_) { return; }
+  for (const kind of ["asr", "mt"]) {
+    const sel = $(kind === "asr" ? "pick-asr" : "pick-mt");
+    sel.innerHTML = modelInfo[kind].map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join("");
+    if (modelInfo.selected[kind]) sel.value = modelInfo.selected[kind];
+  }
+  renderModelCost();
+}
+const pickModel = async () => {
+  const r = await post("/models", { asr: $("pick-asr").value, mt: $("pick-mt").value });
+  if (r.error) { alert(r.error); return; }
+  modelInfo = r;
+  renderModelCost();
+};
+$("pick-asr").addEventListener("change", pickModel);
+$("pick-mt").addEventListener("change", pickModel);
+
+async function loadMeasurements() {
+  let m;
+  try { m = await (await fetch("/measurements")).json(); } catch (_) { return; }
+  if (m.vram && m.vram.peak_mib) {
+    const total = m.vram.card_total_mib || 8188;
+    const peak = m.vram.peak_mib;
+    $("vram-peak").textContent = `${Math.round(peak)} / ${Math.round(total)} MiB`;
+    $("vram-head").textContent = `${Math.round(m.vram.headroom_mib || (total - peak))} MiB`;
+    const used = Math.min(100, peak / total * 100);
+    $("vram-bar").innerHTML =
+      `<div style="width:${used.toFixed(1)}%;background:var(--s2)"></div>` +
+      `<div style="flex:1;background:var(--green-bg)"></div>`;
+  } else {
+    $("vram-peak").textContent = "not measured";
+    $("vram-head").textContent = "—";
+  }
+
+  const runs = m.latency_runs || [];
+  if (!runs.length) {
+    $("lat-table").innerHTML = '<span style="color:var(--dim)">not measured on this machine</span>';
+    $("lat-note").textContent =
+      "Run scripts/measure_audio_device.py --write-config before using speakers.";
+    return;
+  }
+  $("lat-table").innerHTML =
+    `<div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:6px 10px">
+      <span style="color:var(--dim)">run</span><span style="color:var(--dim)">median</span>
+      <span style="color:var(--dim)">range</span><span style="color:var(--dim)">spread</span>` +
+    runs.map((r, i) => `<span>${i + 1}</span><span>${r.median_ms} ms</span>` +
+      `<span>${r.min_ms != null ? `${Math.round(r.min_ms)}–${Math.round(r.max_ms)}` : "—"}</span>` +
+      `<span style="color:${(r.spread_ms || 0) > 200 ? "var(--amber)" : "var(--ink)"}">` +
+      `${r.spread_ms != null ? `${Math.round(r.spread_ms)} ms` : "—"}</span>`).join("") + "</div>";
+  const worst = Math.max(...runs.map((r) => r.spread_ms || 0));
+  $("lat-note").textContent = worst > 200
+    ? `This output path is jittery — up to ${Math.round(worst)} ms of spread within one run. ` +
+      "It is a property of the room rather than the software. Re-measure in the venue."
+    : "Re-measure in the venue: this is a property of the room and the output device.";
+}
+
+// ---- go -------------------------------------------------------------------
+(async () => {
+  try { onState(await (await fetch("/state")).json()); } catch (_) {}
+  await pollPipeline();
+  loadStreaming();
+  loadPreflight();
+  setInterval(pollPipeline, 2000);
+  setInterval(pollMetrics, 1000);
+})();
+</script>

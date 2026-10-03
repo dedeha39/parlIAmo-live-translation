@@ -1,0 +1,54 @@
+# Does a Turkish-fine-tuned Whisper beat the stock multilingual one?
+#
+#   python scripts/sweep_asr.py config/sweeps/asr-turkish-finetunes.yaml
+#
+# Convert a Hugging Face fine-tune to the CTranslate2 format first:
+#
+#   python -m ctranslate2.converters.transformers \
+#       --model selimc/whisper-large-v3-turbo-turkish \
+#       --output_dir models/ct2/whisper-large-v3-turbo-turkish \
+#       --copy_files tokenizer.json preprocessor_config.json \
+#       --quantization float16
+#
+# Reason for scepticism, held before running: these fine-tunes are trained on
+# Common Voice, which is short read sentences. The literature on Whisper
+# fine-tuning reports catastrophic forgetting - target-domain gains bought with
+# losses in long-form handling and general robustness. Our audio is 5-8 second
+# presentation sentences, which is not Common Voice's distribution. The
+# published WER for selimc (18.92 on Common Voice 17) is also not comparable to
+# ours, since it is a different and harder test set.
+#
+# So this sweep exists to answer the question, not to confirm a hope.
+
+dataset:
+  manifest: data/insitu/20260830-141246/manifest.tsv
+
+base:
+  backend: faster_whisper
+  device: cuda
+  language: tr
+  compute_type: int8_float16
+  beam_size: 5
+  condition_on_previous_text: false
+  temperature: 0.0
+  hotwords_file: config/hotwords.tr.txt
+
+variants:
+  - name: "stock turbo (beam 5, hotwords)"
+    model: large-v3-turbo
+
+  - name: "stock large-v3 (beam 1, no hotwords)"
+    model: large-v3
+    beam_size: 1
+    hotwords_file: null
+
+  - name: "tr-finetuned turbo, hotwords"
+    model: models/ct2/whisper-large-v3-turbo-turkish
+
+  - name: "tr-finetuned turbo, no hotwords"
+    model: models/ct2/whisper-large-v3-turbo-turkish
+    hotwords_file: null
+
+  - name: "tr-finetuned turbo, greedy"
+    model: models/ct2/whisper-large-v3-turbo-turkish
+    beam_size: 1

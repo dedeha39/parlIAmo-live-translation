@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>parlIAmo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  The room's window. Projected, read across a room, on a second display.
+  Deliberately not the same page as "/": that one is read at laptop distance by
+  one person who is also talking, and this one is read at ten metres by people
+  who are listening. Same data, different problem.
+
+  Newest sentence largest and at the bottom, older ones fading upward - the eye
+  lands where the text is biggest, and that is where the current sentence is.
+-->
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12161b; --line:#232a32; --edge:#2c343d; --raise:#1a2028;
+  --ink:#f4f6f8; --mid:#b9c1cb; --dim:#7d8590; --prov:#9aa4b0;
+  --live:#5ec8a0; --red:#e24b4a;
+  --warn-bg:#2a2011; --warn-line:#4a3a17; --warn-ink:#e8a33d;
+  --ui:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);
+  display:flex;flex-direction:column;overflow:hidden}
+#muted{height:44px;display:none;align-items:center;justify-content:center;background:var(--red)}
+#muted.show{display:flex}
+#muted span{font:700 15px/1 var(--ui);letter-spacing:.1em;color:#fff}
+#stack{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;
+  gap:26px;padding:56px 70px 30px;overflow:hidden}
+.said .t{font:400 34px/1.25 var(--ui);color:var(--dim);text-wrap:pretty}
+.said .s{font:400 21px/1.4 var(--ui);color:var(--dim);margin-top:10px}
+.said.n1 .t{font-size:42px;color:var(--mid)}
+.said.n0 .t{font:600 62px/1.22 var(--ui);color:var(--ink);letter-spacing:-.015em}
+.said.prov .t{font:italic 400 62px/1.22 var(--ui);color:var(--prov);letter-spacing:-.015em}
+.caret{display:inline-block;width:.5em;height:.1em;margin-left:.25em;
+  background:var(--prov);vertical-align:middle;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:.15}}
+#warn{display:none;padding:14px 40px;background:var(--warn-bg);border-top:1px solid var(--warn-line);
+  font:400 15px/1.5 var(--ui);color:var(--warn-ink)}
+#warn.show{display:block}
+footer{display:flex;align-items:center;gap:26px;padding:15px 40px;background:var(--panel);
+  border-top:1px solid var(--line);flex-wrap:wrap}
+#pulse{width:11px;height:11px;border-radius:50%;background:var(--edge);flex:none}
+#pulse.live{background:var(--live);animation:beat 2s ease-in-out infinite}
+#pulse.dead{background:var(--red)}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.35}}
+footer .m{font:400 15px/1.4 var(--ui);color:var(--dim)}
+footer .m b{color:var(--ink);font-weight:600}
+.spacer{flex:1}
+button{font:400 14px/1 var(--ui);padding:9px 17px;border:1px solid var(--edge);border-radius:6px;
+  background:var(--raise);color:var(--ink);cursor:pointer}
+button:hover{border-color:#3a444f}
+button.on{border-color:var(--red);background:var(--red);color:#fff;font-weight:700}
+body.hidechrome footer,body.hidechrome #warn{display:none}
+@media (max-width:1200px){
+  .said .t{font-size:26px}.said.n1 .t{font-size:32px}
+  .said.n0 .t,.said.prov .t{font-size:44px}
+}
+</style>
+
+<div id="muted"><span>AUDIO MUTED</span></div>
+<div id="stack"></div>
+<div id="warn"></div>
+<footer>
+  <span id="pulse"></span>
+  <span class="m" id="dir">tr → it</span>
+  <span class="m">sentences <b id="s-del">0</b></span>
+  <span class="m">provisional <b id="s-par">0</b></span>
+  <span class="m">last lag <b id="s-lag">—</b></span>
+  <span class="m">voice <b id="s-voice">generic</b></span>
+  <span class="spacer"></span>
+  <button id="b-generic">generic voice</button>
+  <button id="b-src">source</button>
+  <button id="b-full">full screen</button>
+  <button id="b-mute">MUTE</button>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const KEEP = 3;
+let committed = [];
+let provisional = null;
+let showSource = false;
+
+function render() {
+  const rows = committed.slice(-KEEP);
+  let html = "";
+  rows.forEach((r, i) => {
+    const age = rows.length - 1 - i;
+    html += `<div class="said n${age}"><div class="t">${esc(r.translation)}</div>` +
+      (showSource && r.source ? `<div class="s">${esc(r.source)}</div>` : "") + "</div>";
+  });
+  if (provisional) {
+    html += `<div class="said prov"><div class="t">${esc(provisional.translation)}` +
+      `<span class="caret"></span></div>` +
+      (showSource && provisional.source ? `<div class="s">${esc(provisional.source)}</div>` : "") +
+      "</div>";
+  }
+  $("stack").innerHTML = html;
+}
+
+function onDelivery(ev) {
+  // A provisional line is a guess that is still being revised. It is shown in
+  // italics and never spoken: Turkish puts the verb, and the negation, last,
+  // so the meaning can reverse on the final word. A subtitle can be corrected
+  // a second later; audio cannot be un-said.
+  if (ev.partial) provisional = ev;
+  else {
+    provisional = null;
+    committed.push(ev);
+    if (committed.length > 12) committed = committed.slice(-12);
+  }
+  render();
+}
+
+function onState(st) {
+  if (!st) return;
+  $("dir").textContent = `${st.source_lang} → ${st.target_lang}`;
+  $("s-del").textContent = st.delivered;
+  $("s-par").textContent = st.partials;
+  $("s-lag").textContent = st.last_lag_s ? `${st.last_lag_s.toFixed(2)}s` : "—";
+  $("s-voice").textContent = st.voice;
+  $("muted").className = st.muted ? "show" : "";
+  $("b-mute").textContent = st.muted ? "UNMUTE" : "MUTE";
+  $("b-mute").className = st.muted ? "on" : "";
+  const warn = st.gate_warning || "";
+  $("warn").className = warn ? "show" : "";
+  $("warn").textContent = warn;
+}
+
+const es = new EventSource("/events");
+es.onopen = () => { $("pulse").className = "live"; };
+es.onerror = () => { $("pulse").className = "dead"; };
+es.onmessage = (e) => {
+  const m = JSON.parse(e.data);
+  if (m.kind === "delivery") { onDelivery(m.event); onState(m.state); }
+  else if (m.kind === "state") { onState(m.state); }
+};
+
+async function post(url, body) {
+  const r = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return r.json();
+}
+
+const toggleMute = async () => onState(await post("/mute", {}));
+const toggleSource = () => { showSource = !showSource; render(); };
+$("b-mute").addEventListener("click", toggleMute);
+$("b-generic").addEventListener("click", async () => onState(await post("/voice", { path: null })));
+$("b-src").addEventListener("click", toggleSource);
+$("b-full").addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "m") toggleMute();
+  else if (k === "s") toggleSource();
+  else if (k === "f") document.body.classList.toggle("hidechrome");
+});
+
+(async () => {
+  try { onState(await (await fetch("/state")).json()); } catch (_) {}
+})();
+</script>

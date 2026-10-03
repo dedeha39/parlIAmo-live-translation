@@ -1,0 +1,42 @@
+# Vocabulary to bias Turkish recognition toward - the parlIAmo talk to the
+# a seniors' association (2026-09).
+#
+# Whisper has never seen most of these names, and proper nouns are where it
+# fails hardest. In rehearsal (2026-09-26) "Valdastra'da Acme'de" came out as
+# "Valdasta ile Akme", "Nur Yıldız" as "Nuryıldız", "Gemini" as "Ceminay".
+# Naming them up front costs no VRAM and no measurable decode time.
+#
+# Keep it short. A long list dilutes the bias and starts pulling ordinary words
+# toward these ones - and the previous list's names ("Friulian", "Silero") were
+# what Whisper produced out of breaths and silence. Measure after changing it,
+# never assume. Measured 2026-09-26 against the previous list and none
+# (large-v3-turbo, beam 5): the presenter's 35 in-situ sentences without the
+# old list's names 12.12% WER (old 12.95, none 13.50); 16 synthetic sentences
+# with this talk's names 8.80% (old 10.40, none 12.00) - "Crosetto" and
+# "OmniVoice" right only with this list. Details in docs/00-state.md.
+#
+# Blank lines and lines starting with # are ignored; everything else is joined
+# into one space-separated string and passed as `hotwords`.
+
+# --- the speaker, the audience, the place
+İpek Nur Yıldız
+Acme
+Valdastra
+Friuli
+
+# --- names in the talk's cases
+Hong Kong
+Crosetto
+Ferrari
+
+# --- tools named on the slides
+Gemini
+YouTube
+OmniVoice
+
+# --- the subject
+yapay zekâ
+dolandırıcı
+ses klonlama
+deepfake
+filigran
