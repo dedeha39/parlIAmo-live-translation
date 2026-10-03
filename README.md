@@ -1,7 +1,9 @@
-# parlIAmo — live speech translation on one laptop
+# parlIAmo — offline live speech translation with OmniVoice voice cloning
 
 **Speak one language, the room hears another, in your own voice — with no
-cloud, no API keys and no network at run time.** Seven languages in any
+cloud, no API keys and no network at run time.** Real-time speech-to-speech
+translation built on Whisper (faster-whisper), NLLB-200, Kokoro TTS and
+OmniVoice, with RVC and Seed-VC as alternative voice cloners. Seven languages in any
 direction out of the box (Turkish, Italian, English, Spanish, French, German,
 Friulian); the models underneath reach far more. Microphone to
 loudspeaker, everything runs on one consumer laptop with an 8 GB GPU.
